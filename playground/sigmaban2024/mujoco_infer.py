@@ -16,7 +16,7 @@ USE_MOTOR_SPEED_LIMITS = False
 
 class MjInfer(MJInferBase):
     def __init__(
-        self, model_path: str, reference_data: str, onnx_model_path: str, standing: bool, save_obs: bool
+        self, model_path: str, reference_data: str, onnx_model_path: str, standing: bool = False, save_obs: bool = False
     ):
         super().__init__(model_path)
 
@@ -226,7 +226,7 @@ class MjInfer(MJInferBase):
         self.data.qvel[:] = 0.0
         self.data.ctrl[:] = self.default_actuator
 
-        self.support_left = True
+        self.support = "left"
 
     def step(self):
         step_start = time.time()
@@ -241,10 +241,10 @@ class MjInfer(MJInferBase):
                 # if np.linalg.norm(self.commands) > 0.0:
                 self.imitation_i += 1.0 * self.phase_frequency_factor
 
-                if self.support_left and self.imitation_i > self.PRM.nb_steps_in_period/2:
-                    self.support_left = False
-                if not self.support_left and self.imitation_i >= self.PRM.nb_steps_in_period:
-                    self.support_left = True
+                if self.support == "left" and self.imitation_i > self.PRM.nb_steps_in_period/2:
+                    self.support = "right"
+                if self.support == "right" and self.imitation_i >= self.PRM.nb_steps_in_period:
+                    self.support = "left"
 
                 self.imitation_i = (
                     self.imitation_i % self.PRM.nb_steps_in_period
@@ -315,13 +315,13 @@ class MjInfer(MJInferBase):
             if time_until_next_step > 0:
                 time.sleep(time_until_next_step)
 
-    def enable_viewer(self):
+    def enable_viewer(self, key: bool = True):
         self.viewer = mujoco.viewer.launch_passive(
             self.model,
             self.data,
             show_left_ui=False,
             show_right_ui=False,
-            key_callback=self.key_callback,
+            key_callback=self.key_callback if key else None,
         )
 
     def run(self):
