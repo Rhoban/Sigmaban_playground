@@ -1,4 +1,4 @@
-# Sigmaan Playground
+# Sigmaban Playground
 
 # Installation
 
