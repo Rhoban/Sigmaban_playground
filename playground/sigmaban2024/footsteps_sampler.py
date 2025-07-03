@@ -126,6 +126,11 @@ parser.add_argument(
     type=int,
     default=10_000,
 )
+parser.add_argument(
+    "--output",
+    type=str,
+    default="footsteps.json",
+)
 parser.add_argument("--view", action="store_true", default=False)
 args = parser.parse_args()
 
@@ -140,4 +145,4 @@ for n in tqdm.tqdm(range(args.n_samples)):
     sampler.sample()
 
 print(f"Writing data to footsteps.json")
-sampler.save("footsteps.json")
+sampler.save(args.output)
