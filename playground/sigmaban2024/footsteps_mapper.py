@@ -9,24 +9,78 @@ class FootstepsMapper:
         with open(filename, "r") as f:
             self.footsteps = json.load(f)
 
+    def model(self, dx, dy, dtheta):
+        return [
+            # bias
+            1,
+            # 1 term
+            dx,
+            dy,
+            dtheta,
+            # 2 terms
+            dx**2,
+            dx * dy,
+            dx * dtheta,
+            dy**2,
+            dy * dtheta,
+            dtheta**2,
+            # 3 terms
+            # dx**3,
+            # dx**2 * dy,
+            # dx**2 * dtheta,
+            # dx * dy**2,
+            # dx * dtheta**2,
+            # dx * dy * dtheta,
+            # dy**3,
+            # dy**2 * dtheta,
+            # dy * dtheta**2,
+            # dtheta**3,
+        ]
+
+    def get_data(self, side):
+        """
+        Get data for a given side, return commands (n, 3) and footsteps (n, 3)
+        """
+        return np.array(
+            [entry["command"] for entry in self.footsteps if entry["support"] == side]
+        ), np.array(
+            [entry["footstep"] for entry in self.footsteps if entry["support"] == side]
+        )
+
+    def fit(self):
+        
+        feet_spacing = 0.12
+
+        commands_right, footsteps_right = self.get_data("right")
+        commands_left, footsteps_left = self.get_data("left")
+        footsteps_right[:, 1] -= feet_spacing
+        footsteps_left[:, 1] += feet_spacing
+
+        commands = np.vstack((commands_left, commands_right))
+        footsteps = np.vstack((footsteps_left, footsteps_right))
+
+        A = [self.model(*footstep) for footstep in footsteps]
+        b = commands
+
+        result = np.linalg.lstsq(A, b)
+        x = result[0]
+        print(x.shape)
+
+        print(self.model(0.0, -0.03, 0.0) @ x)
+
+        # for command, footstep in zip(commands, footsteps):
+        #     print(f"===")
+        #     print(f"Command: {command}")
+        #     print(f"Footstep: {footstep}")
+        #     predicted_command = self.model(*footstep) @ x
+        #     print(f"Predicted command: {predicted_command}")
+
     def show_plot(self):
         fig, axs = plt.subplots(3, 2)
 
         for k, side in enumerate(["left", "right"]):
-            commands = np.array(
-                [
-                    entry["command"]
-                    for entry in self.footsteps
-                    if entry["support"] == side
-                ]
-            )
-            footsteps = np.array(
-                [
-                    entry["footstep"]
-                    for entry in self.footsteps
-                    if entry["support"] == side
-                ]
-            )
+            commands, footsteps = self.get_data(side)
+
             axs[0][k].set_title(f"Support {side}")
             axs[0][k].scatter(commands[:, 0], footsteps[:, 0], label="dx", s=0.1)
             axs[0][k].set_xlabel("velocity x")
@@ -61,3 +115,5 @@ mapper = FootstepsMapper(args.footsteps)
 
 if args.plot:
     mapper.show_plot()
+
+mapper.fit()

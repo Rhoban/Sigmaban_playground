@@ -12,7 +12,7 @@ class FootstepsSampler:
         self.mjinfer: MjInfer = mjinfer
 
         # Number of footsteps taken at the begining
-        self.warmup_footsteps: int = 3
+        self.warmup_footsteps: int = 30
 
         # Data generated
         self.footsteps = []
@@ -22,7 +22,9 @@ class FootstepsSampler:
         Resets the simulation and sample a random linear velocity
         """
         self.mjinfer.reset()
+        self.sample_command()
 
+    def sample_command(self):
         command_x = np.random.uniform(*self.mjinfer.COMMANDS_RANGE_X)
         command_y = np.random.uniform(*self.mjinfer.COMMANDS_RANGE_Y)
         command_theta = np.random.uniform(*self.mjinfer.COMMANDS_RANGE_THETA)
@@ -56,8 +58,22 @@ class FootstepsSampler:
         Walks until the next support is reached
         """
         support = self.mjinfer.support
+        self.sample_command()
 
         while self.mjinfer.support == support:
+            # if self.mjinfer.support == "left":
+            #     self.mjinfer.commands[0] = 0.131
+            #     self.mjinfer.commands[1] = -0.078
+            #     self.mjinfer.commands[2] = 0.2727
+            # else:
+            #     self.mjinfer.commands[0] = 0.14
+            #     self.mjinfer.commands[1] = 0.03
+            #     self.mjinfer.commands[2] = -0.21
+
+            # self.mjinfer.commands[0] = -0.0090
+            # self.mjinfer.commands[1] = -0.1986
+            # self.mjinfer.commands[2] = -0.247
+
             self.mjinfer.step()
 
     def compute_footstep(self, support_foot, landing_foot):
@@ -73,7 +89,7 @@ class FootstepsSampler:
 
         return dx, dy, dtheta
 
-    def sample(self):
+    def sample(self, samples: int = 1):
         # Letting simulation stabilize
         for _ in range(self.warmup_footsteps):
             self.walk_one_step()
@@ -82,24 +98,29 @@ class FootstepsSampler:
         while self.mjinfer.support != "left":
             self.walk_one_step()
 
-        dx, dy, dtheta = self.compute_footstep("right_foot", "left_foot")
-        self.footsteps.append(
-            {
-                "support": "right",
-                "command": self.mjinfer.commands[:3],
-                "footstep": (dx, dy, dtheta),
-            }
-        )
-        self.walk_one_step()
+        for _ in range(samples):    
+            dx, dy, dtheta = self.compute_footstep("right_foot", "left_foot")
+            self.footsteps.append(
+                {
+                    "support": "right",
+                    "command": self.mjinfer.commands[:3],
+                    "footstep": (dx, dy, dtheta),
+                }
+            )
+            self.walk_one_step()
 
-        dx, dy, dtheta = self.compute_footstep("left_foot", "right_foot")
-        self.footsteps.append(
-            {
-                "support": "left",
-                "command": self.mjinfer.commands[:3],
-                "footstep": (dx, dy, dtheta),
-            }
-        )
+            dx, dy, dtheta = self.compute_footstep("left_foot", "right_foot")
+            self.footsteps.append(
+                {
+                    "support": "left",
+                    "command": self.mjinfer.commands[:3],
+                    "footstep": (dx, dy, dtheta),
+                }
+            )
+            self.walk_one_step()
+
+        # print(self.footsteps)
+        # input()
 
     def save(self, filename: str):
         """
@@ -140,9 +161,9 @@ if args.view:
 
 sampler = FootstepsSampler(mjinfer)
 
-for n in tqdm.tqdm(range(args.n_samples)):
+for n in tqdm.tqdm(range(args.n_samples // 10)):
     sampler.reset()
-    sampler.sample()
+    sampler.sample(10)
 
 print(f"Writing data to footsteps.json")
 sampler.save(args.output)
