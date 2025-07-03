@@ -16,7 +16,7 @@ USE_MOTOR_SPEED_LIMITS = False
 
 class MjInfer(MJInferBase):
     def __init__(
-        self, model_path: str, reference_data: str, onnx_model_path: str, standing: bool
+        self, model_path: str, reference_data: str, onnx_model_path: str, standing: bool, save_obs: bool
     ):
         super().__init__(model_path)
 
@@ -53,11 +53,15 @@ class MjInfer(MJInferBase):
 
         self.imitation_i = 0
         self.imitation_phase = np.array([0, 0])
+
+        self.save_obs = save_obs
         self.saved_obs = []
 
         self.max_motor_velocity = 5.24  # rad/s
 
         self.phase_frequency_factor = 1.0
+
+        self.viewer = None
 
         print(f"joint names: {self.joint_names}")
         print(f"actuator names: {self.actuator_names}")
@@ -186,6 +190,8 @@ class MjInfer(MJInferBase):
                 # self.phase_frequency_factor += 0.1
             if keycode == 59:  # m
                 self.phase_frequency_factor -= 0.1
+            if keycode == 82:  # r
+                self.reset()
         else:
             neck_pitch = 0
             head_pitch = 0
@@ -213,93 +219,118 @@ class MjInfer(MJInferBase):
         self.commands[1] = lin_vel_y
         self.commands[2] = ang_vel
 
+    def reset(self):
+        self.counter = 0
+        self.t = 0
+        self.data.qpos[:] = self.model.keyframe("home").qpos
+        self.data.qvel[:] = 0.0
+        self.data.ctrl[:] = self.default_actuator
+
+        self.support_left = True
+
+    def step(self):
+        step_start = time.time()
+
+        mujoco.mj_step(self.model, self.data)
+
+        self.counter += 1
+        self.t += self.model.opt.timestep
+
+        if self.counter % self.decimation == 0:
+            if not self.standing:
+                # if np.linalg.norm(self.commands) > 0.0:
+                self.imitation_i += 1.0 * self.phase_frequency_factor
+
+                if self.support_left and self.imitation_i > self.PRM.nb_steps_in_period/2:
+                    self.support_left = False
+                if not self.support_left and self.imitation_i >= self.PRM.nb_steps_in_period:
+                    self.support_left = True
+
+                self.imitation_i = (
+                    self.imitation_i % self.PRM.nb_steps_in_period
+                )
+                
+                # else:
+                #     self.imitation_i = 0.0
+                # print(self.PRM.nb_steps_in_period)
+                # exit()
+                self.imitation_phase = np.array(
+                    [
+                        np.cos(
+                            self.imitation_i
+                            / self.PRM.nb_steps_in_period
+                            * 2
+                            * np.pi
+                        ),
+                        np.sin(
+                            self.imitation_i
+                            / self.PRM.nb_steps_in_period
+                            * 2
+                            * np.pi
+                        ),
+                    ]
+                )
+            obs = self.get_obs(
+                self.data,
+                self.commands,
+            )
+            self.saved_obs.append(obs)
+            action = self.policy.infer(obs)
+
+            # self.action_filter.push(action)
+            # action = self.action_filter.get_filtered_action()
+
+            self.last_last_last_action = self.last_last_action.copy()
+            self.last_last_action = self.last_action.copy()
+            self.last_action = action.copy()
+
+            self.motor_targets = (
+                self.default_actuator + action * self.action_scale
+            )
+
+            if USE_MOTOR_SPEED_LIMITS:
+                self.motor_targets = np.clip(
+                    self.motor_targets,
+                    self.prev_motor_targets
+                    - self.max_motor_velocity
+                    * (self.sim_dt * self.decimation),
+                    self.prev_motor_targets
+                    + self.max_motor_velocity
+                    * (self.sim_dt * self.decimation),
+                )
+
+                self.prev_motor_targets = self.motor_targets.copy()
+
+            # head_targets = self.commands[3:]
+            # self.motor_targets[5:9] = head_targets
+            self.data.ctrl = self.motor_targets.copy()
+            # self.data.ctrl = np.zeros(20)
+
+        if self.viewer is not None:
+            self.viewer.sync()
+
+            time_until_next_step = self.model.opt.timestep - (
+                time.time() - step_start
+            )
+            if time_until_next_step > 0:
+                time.sleep(time_until_next_step)
+
+    def enable_viewer(self):
+        self.viewer = mujoco.viewer.launch_passive(
+            self.model,
+            self.data,
+            show_left_ui=False,
+            show_right_ui=False,
+            key_callback=self.key_callback,
+        )
+
     def run(self):
         try:
-            with mujoco.viewer.launch_passive(
-                self.model,
-                self.data,
-                show_left_ui=False,
-                show_right_ui=False,
-                key_callback=self.key_callback,
-            ) as viewer:
-                counter = 0
-                while True:
-                    step_start = time.time()
+            self.reset()
+            self.enable_viewer()
 
-                    mujoco.mj_step(self.model, self.data)
-
-                    counter += 1
-
-                    if counter % self.decimation == 0:
-                        if not self.standing:
-                            # if np.linalg.norm(self.commands) > 0.0:
-                            self.imitation_i += 1.0 * self.phase_frequency_factor
-                            self.imitation_i = (
-                                self.imitation_i % self.PRM.nb_steps_in_period
-                            )
-                            # else:
-                            #     self.imitation_i = 0.0
-                            # print(self.PRM.nb_steps_in_period)
-                            # exit()
-                            self.imitation_phase = np.array(
-                                [
-                                    np.cos(
-                                        self.imitation_i
-                                        / self.PRM.nb_steps_in_period
-                                        * 2
-                                        * np.pi
-                                    ),
-                                    np.sin(
-                                        self.imitation_i
-                                        / self.PRM.nb_steps_in_period
-                                        * 2
-                                        * np.pi
-                                    ),
-                                ]
-                            )
-                        obs = self.get_obs(
-                            self.data,
-                            self.commands,
-                        )
-                        self.saved_obs.append(obs)
-                        action = self.policy.infer(obs)
-
-                        # self.action_filter.push(action)
-                        # action = self.action_filter.get_filtered_action()
-
-                        self.last_last_last_action = self.last_last_action.copy()
-                        self.last_last_action = self.last_action.copy()
-                        self.last_action = action.copy()
-
-                        self.motor_targets = (
-                            self.default_actuator + action * self.action_scale
-                        )
-
-                        if USE_MOTOR_SPEED_LIMITS:
-                            self.motor_targets = np.clip(
-                                self.motor_targets,
-                                self.prev_motor_targets
-                                - self.max_motor_velocity
-                                * (self.sim_dt * self.decimation),
-                                self.prev_motor_targets
-                                + self.max_motor_velocity
-                                * (self.sim_dt * self.decimation),
-                            )
-
-                            self.prev_motor_targets = self.motor_targets.copy()
-
-                        # head_targets = self.commands[3:]
-                        # self.motor_targets[5:9] = head_targets
-                        self.data.ctrl = self.motor_targets.copy()
-                        # self.data.ctrl = np.zeros(20)
-
-                    viewer.sync()
-
-                    time_until_next_step = self.model.opt.timestep - (
-                        time.time() - step_start
-                    )
-                    if time_until_next_step > 0:
-                        time.sleep(time_until_next_step)
+            while True:
+                self.step()
         except KeyboardInterrupt:
             pickle.dump(self.saved_obs, open("mujoco_saved_obs.pkl", "wb"))
 
@@ -319,10 +350,11 @@ if __name__ == "__main__":
         default="playground/sigmaban2024/xmls/scene_flat_terrain.xml",
     )
     parser.add_argument("--standing", action="store_true", default=False)
+    parser.add_argument("--save-obs", action="store_true", default=False)
 
     args = parser.parse_args()
 
     mjinfer = MjInfer(
-        args.model_path, args.reference_data, args.onnx_model_path, args.standing
+        args.model_path, args.reference_data, args.onnx_model_path, args.standing, args.save_obs
     )
     mjinfer.run()
