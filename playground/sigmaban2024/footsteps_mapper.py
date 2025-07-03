@@ -13,17 +13,20 @@ class FootstepsMapper:
         return [
             # bias
             1,
+            
             # 1 term
             dx,
             dy,
             dtheta,
+
             # 2 terms
-            dx**2,
-            dx * dy,
-            dx * dtheta,
-            dy**2,
-            dy * dtheta,
-            dtheta**2,
+            # dx**2,
+            # dx * dy,
+            # dx * dtheta,
+            # dy**2,
+            # dy * dtheta,
+            # dtheta**2,
+
             # 3 terms
             # dx**3,
             # dx**2 * dy,
@@ -48,11 +51,12 @@ class FootstepsMapper:
         )
 
     def fit(self):
-        
-        feet_spacing = 0.12
-
         commands_right, footsteps_right = self.get_data("right")
         commands_left, footsteps_left = self.get_data("left")
+
+        feet_spacing = (np.mean(footsteps_right[:, 1]) - np.mean(footsteps_left[:, 1]))/2
+        print(f"Average feet spacing is {feet_spacing}")
+
         footsteps_right[:, 1] -= feet_spacing
         footsteps_left[:, 1] += feet_spacing
 
@@ -63,10 +67,15 @@ class FootstepsMapper:
         b = commands
 
         result = np.linalg.lstsq(A, b)
-        x = result[0]
-        print(x.shape)
+        
+        x = result[0].T
+        with open("footsteps_mapping.json", "w") as f:
+            json.dump(x.tolist(), f)
+        
+        print(f"Residuals: {result[1]}")
+        print(x)
 
-        print(self.model(0.0, -0.03, 0.0) @ x)
+        print(x @ self.model(0.0, -0.03, 0.0))
 
         # for command, footstep in zip(commands, footsteps):
         #     print(f"===")

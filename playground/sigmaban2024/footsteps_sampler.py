@@ -12,7 +12,7 @@ class FootstepsSampler:
         self.mjinfer: MjInfer = mjinfer
 
         # Number of footsteps taken at the begining
-        self.warmup_footsteps: int = 30
+        self.warmup_footsteps: int = 3
 
         # Data generated
         self.footsteps = []
@@ -61,18 +61,9 @@ class FootstepsSampler:
         self.sample_command()
 
         while self.mjinfer.support == support:
-            # if self.mjinfer.support == "left":
-            #     self.mjinfer.commands[0] = 0.131
-            #     self.mjinfer.commands[1] = -0.078
-            #     self.mjinfer.commands[2] = 0.2727
-            # else:
-            #     self.mjinfer.commands[0] = 0.14
-            #     self.mjinfer.commands[1] = 0.03
-            #     self.mjinfer.commands[2] = -0.21
-
-            # self.mjinfer.commands[0] = -0.0090
-            # self.mjinfer.commands[1] = -0.1986
-            # self.mjinfer.commands[2] = -0.247
+            # self.mjinfer.commands[0] = -0.0129
+            # self.mjinfer.commands[1] = -0.187
+            # self.mjinfer.commands[2] = -0.14
 
             self.mjinfer.step()
 
