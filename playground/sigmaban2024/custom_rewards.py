@@ -28,6 +28,10 @@ def reward_imitation(
     w_joint_vel = 1.0e-3
     w_contact = 1.0
 
+    # Special weights for arm motors (motors 2 to 7)
+    w_joint_pos_arms = 1.5 #15.0
+    w_joint_vel_arms = 1.0e-4 #1.0e-3
+
     # Mansin' weights
     # w_torso_pos = 0.0
     # w_torso_orientation = 0.0
@@ -145,8 +149,19 @@ def reward_imitation(
         * w_ang_vel_z
     )
 
-    joint_pos_rew = -jp.sum(jp.square(joint_pos - ref_joint_pos)) * w_joint_pos
-    joint_vel_rew = -jp.sum(jp.square(joint_vel - ref_joint_vels)) * w_joint_vel
+    # Apply different weights for arm motors (2 to 7)
+    joint_pos_error = jp.square(joint_pos - ref_joint_pos)
+    joint_pos_rew = (
+        -jp.sum(joint_pos_error[:2]) * w_joint_pos
+        -jp.sum(joint_pos_error[2:8]) * w_joint_pos_arms
+        -jp.sum(joint_pos_error[8:]) * w_joint_pos
+    )
+    joint_vel_error = jp.square(joint_vel - ref_joint_vels)
+    joint_vel_rew = (
+        -jp.sum(joint_vel_error[:2]) * w_joint_vel
+        -jp.sum(joint_vel_error[2:8]) * w_joint_vel_arms
+        -jp.sum(joint_vel_error[8:]) * w_joint_vel
+    )
 
     ref_foot_contacts = jp.where(
         ref_foot_contacts > 0.5,

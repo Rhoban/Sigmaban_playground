@@ -15,7 +15,7 @@ dependencies = [
     "playground>=0.0.3",
     "pygame>=2.6.1",
     "tensorflow>=2.18.0",
-    "tf2onnx>=1.16.1",
+    "tf2onnx @ git+https://github.com/onnx/tensorflow-onnx",
 ]
 [build-system]
 requires = ["setuptools"]
