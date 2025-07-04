@@ -16,7 +16,12 @@ USE_MOTOR_SPEED_LIMITS = False
 
 class MjInfer(MJInferBase):
     def __init__(
-        self, model_path: str, reference_data: str, onnx_model_path: str, standing: bool = False, save_obs: bool = False
+        self,
+        model_path: str,
+        reference_data: str,
+        onnx_model_path: str,
+        standing: bool = False,
+        save_obs: bool = False,
     ):
         super().__init__(model_path)
 
@@ -125,17 +130,15 @@ class MjInfer(MJInferBase):
         # )
 
         # AFTER
-        gravity = np.array(data.site_xmat[self.get_site_id_from_name("trunk")]).reshape((3, 3)).T @ np.array(
-            [0, 0, -1]
-        )
-
+        gravity = np.array(data.site_xmat[self.get_site_id_from_name("trunk")]).reshape(
+            (3, 3)
+        ).T @ np.array([0, 0, -1])
 
         joint_angles = self.get_actuator_joints_qpos(data.qpos)
         joint_vel = self.get_actuator_joints_qvel(data.qvel)
 
         # add noise to joint vel
         # joint_vel += np.random.random(20)*1.5
-
 
         contacts = self.get_feet_contacts(data)
         # contacts = [1., 1.]
@@ -219,6 +222,20 @@ class MjInfer(MJInferBase):
         self.commands[1] = lin_vel_y
         self.commands[2] = ang_vel
 
+    def get_T_world_site(self, site_name: str) -> np.ndarray:
+        """
+        Gets the transformation from world to site frame.
+
+        Args:
+            site_name (str): site name
+        """
+        T = np.eye(4)
+        site = self.data.site(site_name)
+        T[:3, :3] = site.xmat.reshape(3, 3)
+        T[:3, 3] = site.xpos
+
+        return T
+
     def reset(self):
         self.counter = 0
         self.t = 0
@@ -233,6 +250,12 @@ class MjInfer(MJInferBase):
 
         mujoco.mj_step(self.model, self.data)
 
+        # TODO: Move this somewhere else (calibrating neutral feet spacing)
+        # T_left_right = np.linalg.inv(
+        #     self.get_T_world_site("left_foot")
+        # ) @ self.get_T_world_site("right_foot")
+        # print(f"Right position inl left frame: {T_left_right[:3, 3]}")
+
         self.counter += 1
         self.t += self.model.opt.timestep
 
@@ -241,15 +264,14 @@ class MjInfer(MJInferBase):
                 # if np.linalg.norm(self.commands) > 0.0:
                 self.imitation_i += 1.0 * self.phase_frequency_factor
 
-                if self.support == "left" and self.imitation_i > self.PRM.nb_steps_in_period/2:
-                    self.support = "right"
-                if self.support == "right" and self.imitation_i >= self.PRM.nb_steps_in_period:
-                    self.support = "left"
-
-                self.imitation_i = (
-                    self.imitation_i % self.PRM.nb_steps_in_period
+                self.support = (
+                    "left"
+                    if self.imitation_i < self.PRM.nb_steps_in_period / 2
+                    else "right"
                 )
-                
+
+                self.imitation_i = self.imitation_i % self.PRM.nb_steps_in_period
+
                 # else:
                 #     self.imitation_i = 0.0
                 # print(self.PRM.nb_steps_in_period)
@@ -257,16 +279,10 @@ class MjInfer(MJInferBase):
                 self.imitation_phase = np.array(
                     [
                         np.cos(
-                            self.imitation_i
-                            / self.PRM.nb_steps_in_period
-                            * 2
-                            * np.pi
+                            self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
                         ),
                         np.sin(
-                            self.imitation_i
-                            / self.PRM.nb_steps_in_period
-                            * 2
-                            * np.pi
+                            self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
                         ),
                     ]
                 )
@@ -284,19 +300,15 @@ class MjInfer(MJInferBase):
             self.last_last_action = self.last_action.copy()
             self.last_action = action.copy()
 
-            self.motor_targets = (
-                self.default_actuator + action * self.action_scale
-            )
+            self.motor_targets = self.default_actuator + action * self.action_scale
 
             if USE_MOTOR_SPEED_LIMITS:
                 self.motor_targets = np.clip(
                     self.motor_targets,
                     self.prev_motor_targets
-                    - self.max_motor_velocity
-                    * (self.sim_dt * self.decimation),
+                    - self.max_motor_velocity * (self.sim_dt * self.decimation),
                     self.prev_motor_targets
-                    + self.max_motor_velocity
-                    * (self.sim_dt * self.decimation),
+                    + self.max_motor_velocity * (self.sim_dt * self.decimation),
                 )
 
                 self.prev_motor_targets = self.motor_targets.copy()
@@ -309,9 +321,7 @@ class MjInfer(MJInferBase):
         if self.viewer is not None:
             self.viewer.sync()
 
-            time_until_next_step = self.model.opt.timestep - (
-                time.time() - step_start
-            )
+            time_until_next_step = self.model.opt.timestep - (time.time() - step_start)
             if time_until_next_step > 0:
                 time.sleep(time_until_next_step)
 
@@ -355,6 +365,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     mjinfer = MjInfer(
-        args.model_path, args.reference_data, args.onnx_model_path, args.standing, args.save_obs
+        args.model_path,
+        args.reference_data,
+        args.onnx_model_path,
+        args.standing,
+        args.save_obs,
     )
     mjinfer.run()
