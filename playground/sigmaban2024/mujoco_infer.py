@@ -115,6 +115,9 @@ class MjInfer(MJInferBase):
         # right_contact = self.check_contact(data, "right_foot_", "floor")
         return left_contact, right_contact
 
+    def set_command(self, vx: float, vy: float, vtheta: float):
+        self.commands = [vx, vy, vtheta] + [0.0] * 4
+
     def get_obs(
         self,
         data,
@@ -235,6 +238,15 @@ class MjInfer(MJInferBase):
         T[:3, 3] = site.xpos
 
         return T
+
+    def walk_one_step(self):
+        """
+        Walks until the next support is reached
+        """
+        current_support = self.support
+
+        while self.support == current_support:
+            self.step()
 
     def reset(self):
         self.counter = 0

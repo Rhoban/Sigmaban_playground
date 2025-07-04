@@ -5,14 +5,15 @@ import argparse
 
 
 class FootstepsMapper:
-    def __init__(self, filename: str):
+    def __init__(self, filename: str | None = None):
 
         self.feet_spacing = None
         self.M = None
         self.trained = False
 
-        with open(filename, "r") as f:
-            self.footsteps = json.load(f)
+        if filename:
+            with open(filename, "r") as f:
+                self.footsteps = json.load(f)
 
     def model(self, dx, dy, dtheta):
         return [
@@ -46,15 +47,26 @@ class FootstepsMapper:
         """
         Get data for a given side, return commands (n, 3) and footsteps (n, 3)
         """
-        return np.array(
-            [entry["command"] for entry in self.footsteps if entry["support"] == side]
-        ).copy(), np.array(
-            [entry["footstep"] for entry in self.footsteps if entry["support"] == side]
-        ).copy()
+        return (
+            np.array(
+                [
+                    entry["command"]
+                    for entry in self.footsteps
+                    if entry["support"] == side
+                ]
+            ).copy(),
+            np.array(
+                [
+                    entry["footstep"]
+                    for entry in self.footsteps
+                    if entry["support"] == side
+                ]
+            ).copy(),
+        )
 
     def remap(self, dx, dy, dtheta):
         return self.M @ self.model(dx, dy, dtheta)
-    
+
     def prepare(self):
         commands_right, footsteps_right = self.get_data("right")
         commands_left, footsteps_left = self.get_data("left")
@@ -71,6 +83,16 @@ class FootstepsMapper:
 
         return commands, footsteps
 
+    def save(self, filename: str = "footsteps_mapping.json"):
+        with open(filename, "w") as f:
+            json.dump({"feet_spacing": self.feet_spacing, "M": self.M.tolist()}, f)
+
+    def load(self, filename: str):
+        with open(filename, "r") as f:
+            data = json.load(f)
+            self.feet_spacing = data["feet_spacing"]
+            self.M = np.array(data["M"])
+
     def fit(self):
         commands, footsteps = self.prepare()
 
@@ -80,9 +102,7 @@ class FootstepsMapper:
         result = np.linalg.lstsq(A, b)
 
         self.M = result[0].T
-        with open("footsteps_mapping.json", "w") as f:
-            json.dump({"feet_spacing": self.feet_spacing, "M": self.M.tolist()}, f)
-
+        self.save()
 
         print(f"Residuals: {result[1]}")
         print("")
@@ -98,7 +118,7 @@ class FootstepsMapper:
         for row in range(rows):
             for col in range(cols):
                 row_str += str(self.M[row, col])
-                if row == rows-1 and col == cols-1:
+                if row == rows - 1 and col == cols - 1:
                     row_str += ";"
                 else:
                     row_str += ", "
@@ -114,15 +134,14 @@ class FootstepsMapper:
         commands, footsteps = self.prepare()
         commands_pred = np.array([self.remap(*f) for f in footsteps])
 
-        mse = np.mean((commands - commands_pred)**2)
-        print(f"Model MSE: {mse}")        
+        mse = np.mean((commands - commands_pred) ** 2)
+        print(f"Model MSE: {mse}")
 
     def show_plot(self):
         # fig, axs = plt.subplots(3, 2)
 
         # for k, side in enumerate(["left", "right"]):
         #     commands, footsteps = self.get_data(side)
-
 
         #     axs[0][k].set_title(f"Support {side}")
         #     axs[0][k].scatter(commands[:, 0], footsteps[:, 0], label="dx", s=0.1)
@@ -156,7 +175,6 @@ class FootstepsMapper:
         #     axs[2][k].grid()
         #     axs[2][k].legend()
 
-
         commands, footsteps = self.prepare()
 
         fig, axs = plt.subplots(3, 1)
@@ -165,7 +183,7 @@ class FootstepsMapper:
             dx_range = np.min(footsteps[:, 0]), np.max(footsteps[:, 0])
             dxs = np.linspace(*dx_range, 100)
             xvels = np.array([self.remap(dx, 0, 0) for dx in dxs])
-            axs[0].plot(xvels[:, 0], dxs, label="remap", c='orange')
+            axs[0].plot(xvels[:, 0], dxs, label="remap", c="orange")
         axs[0].set_xlabel("velocity x")
         axs[0].grid()
         axs[0].legend()
@@ -175,7 +193,7 @@ class FootstepsMapper:
             dy_range = np.min(footsteps[:, 1]), np.max(footsteps[:, 1])
             dys = np.linspace(*dy_range, 100)
             yvels = np.array([self.remap(0, dy, 0) for dy in dys])
-            axs[1].plot(yvels[:, 1], dys, label="remap", c='orange')
+            axs[1].plot(yvels[:, 1], dys, label="remap", c="orange")
         axs[1].set_xlabel("velocity y")
         axs[1].grid()
         axs[1].legend()
@@ -185,7 +203,7 @@ class FootstepsMapper:
             dtheta_range = np.min(footsteps[:, 2]), np.max(footsteps[:, 2])
             dthetas = np.linspace(*dtheta_range, 100)
             thetavels = np.array([self.remap(0, 0, dtheta) for dtheta in dthetas])
-            axs[2].plot(thetavels[:, 2], dthetas, label="remap", c='orange')
+            axs[2].plot(thetavels[:, 2], dthetas, label="remap", c="orange")
         axs[2].set_xlabel("velocity theta")
         axs[2].grid()
         axs[2].legend()
@@ -194,8 +212,9 @@ class FootstepsMapper:
         plt.legend()
         plt.show()
 
+
 if __name__ == "__main__":
-        
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--footsteps",

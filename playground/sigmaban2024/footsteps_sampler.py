@@ -39,15 +39,6 @@ class FootstepsSampler:
             0.0,
         ]
 
-    def walk_one_step(self):
-        """
-        Walks until the next support is reached
-        """
-        current_support = self.mjinfer.support
-
-        while self.mjinfer.support == current_support:
-            self.mjinfer.step()
-
     def compute_footstep(self, support_foot, landing_foot):
         """
         Compute the footstep (dx, dy, dtheta) in support foot from MuJoCo frames
@@ -64,11 +55,11 @@ class FootstepsSampler:
     def sample(self, samples: int = 1):
         # Letting simulation stabilize
         for _ in range(self.warmup_footsteps):
-            self.walk_one_step()
+            self.mjinfer.walk_one_step()
 
         # Waiting for the left foot to reach the ground
         while self.mjinfer.support != "left":
-            self.walk_one_step()
+            self.mjinfer.walk_one_step()
 
         for _ in range(samples):
             dx, dy, dtheta = self.compute_footstep("right_foot", "left_foot")
@@ -79,7 +70,7 @@ class FootstepsSampler:
                     "footstep": [dx, dy, dtheta],
                 }
             )
-            self.walk_one_step()
+            self.mjinfer.walk_one_step()
 
             dx, dy, dtheta = self.compute_footstep("left_foot", "right_foot")
             self.footsteps.append(
@@ -89,7 +80,7 @@ class FootstepsSampler:
                     "footstep": [dx, dy, dtheta],
                 }
             )
-            self.walk_one_step()
+            self.mjinfer.walk_one_step()
 
             # print(self.footsteps)
             # input()
