@@ -1,10 +1,14 @@
 <mujoco model="scene">
-    <include file="sigmaban2024_backlash.xml"/>
+    <include file="sigmaban2024_backlash.xml" />
 
     <visual>
-        <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
-        <rgba haze="0.15 0.25 0.35 1"/>
-        <global azimuth="160" elevation="-20"/>
+        <headlight
+            diffuse="0.6 0.6 0.6"
+            ambient="0.3 0.3 0.3"
+            specular="0 0 0"
+        />
+        <rgba haze="0.15 0.25 0.35 1" />
+        <global azimuth="160" elevation="-20" />
     </visual>
     <!--
     <asset>
@@ -24,20 +28,53 @@
 
 
     <asset>
-        <texture type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="1 1 1" width="800" height="800"/>
-        <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="1 1 1" rgb2="1 1 1" markrgb="0 0 0"
-            width="300" height="300"/>
-        <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0"/>
+        <texture
+            type="skybox"
+            builtin="gradient"
+            rgb1="1 1 1"
+            rgb2="1 1 1"
+            width="800"
+            height="800"
+        />
+        <texture
+            type="2d"
+            name="groundplane"
+            builtin="checker"
+            mark="edge"
+            rgb1="1 1 1"
+            rgb2="1 1 1"
+            markrgb="0 0 0"
+            width="300"
+            height="300"
+        />
+        <material
+            name="groundplane"
+            texture="groundplane"
+            texuniform="true"
+            texrepeat="5 5"
+            reflectance="0"
+        />
     </asset>
 
     <worldbody>
         <body name="floor">
-            <geom name="floor" size="0 0 0.01" type="plane" material="groundplane" contype="1" conaffinity="0"
-                priority="1" friction="0.6" condim="3"/>
+            <geom
+                name="floor"
+                size="0 0 0.01"
+                type="plane"
+                material="groundplane"
+                contype="1"
+                conaffinity="0"
+                priority="1"
+                friction="0.6"
+                condim="3"
+            />
         </body>
     </worldbody>
+
     <keyframe>
-        <key name="home"
+        <key
+            name="home"
             qpos="
 			    0 0 0.4
 			    1 0 0 0
@@ -89,6 +126,65 @@
 				1.0
 				-0.48
 				0
-          "/>
+          "
+        />
     </keyframe>
+
+    <!-- Marc's pose below -->
+    <!-- <keyframe>
+        <key name="home"
+            qpos="
+			    0 0 0.4
+			    1 0 0 0
+
+				0
+				0
+				0.34
+				0
+				-0.86
+				0.34
+				0
+				-0.86
+
+				0 0
+				0 0
+				-0.89 0
+				1.35 0
+				-0.62 0
+				0 0
+
+				0 0
+				0 0
+				-0.89 0
+				1.35 0
+				-0.62 0
+				0 0
+
+"
+            ctrl="
+          		0
+				0
+				0.34
+				0
+				-0.86
+				0.34
+				0
+				-0.86
+
+				0
+				0
+				-0.89
+				1.35
+				-0.62
+				0
+
+				0
+				0
+				-0.89
+				1.35
+				-0.62
+				0
+          "/>
+    </keyframe> -->
+
 </mujoco>
