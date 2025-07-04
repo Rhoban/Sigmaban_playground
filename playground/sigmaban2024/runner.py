@@ -48,13 +48,15 @@ def main() -> None:
         default=None,
         help="Path to restore checkpoint from",
     )
+    parser.add_argument(
+        "--wandb", action="store_true", help="Publish run to wandb"
+    )
     # parser.add_argument(
     #     "--debug", action="store_true", help="Run in debug mode with minimal parameters"
     # )
     args = parser.parse_args()
 
     runner = SigmabanRunner(args)
-
     runner.train()
 
 

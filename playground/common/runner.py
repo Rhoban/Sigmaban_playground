@@ -17,6 +17,7 @@ from mujoco_playground import wrapper
 from mujoco_playground.config import locomotion_params
 from orbax import checkpoint as ocp
 import jax
+import wandb
 
 from playground.common.export_onnx import export_onnx
 
@@ -53,7 +54,15 @@ class BaseRunner(ABC):
         )
         os.environ["JAX_COMPILATION_CACHE_DIR"] = ".tmp/jax_cache"
 
+        if args.wandb:
+            self.wandb = True
+            wandb.init(project="sigmaban_playground", name="training")
+        else:
+            self.wandb = False
+
     def progress_callback(self, num_steps: int, metrics: dict) -> None:
+        if self.wandb:
+            wandb.log(metrics, step=num_steps)
 
         for metric_name, metric_value in metrics.items():
             # Convert to float, but watch out for 0-dim JAX arrays
@@ -80,7 +89,7 @@ class BaseRunner(ABC):
             self.action_size,
             self.ppo_params,
             self.obs_size,  # may not work
-            output_path=onnx_export_path
+            output_path=onnx_export_path,
         )
 
     def train(self) -> None:
@@ -89,7 +98,6 @@ class BaseRunner(ABC):
         )  # TODO
         self.ppo_training_params = dict(self.ppo_params)
         # self.ppo_training_params["num_timesteps"] = 150000000 * 20
-
 
         if "network_factory" in self.ppo_params:
             network_factory = functools.partial(
