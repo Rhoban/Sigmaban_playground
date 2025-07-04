@@ -41,6 +41,7 @@ class BaseRunner(ABC):
         self.action_size = None
         self.obs_size = None
         self.num_timesteps = args.num_timesteps
+        self.num_envs = args.num_envs
         self.restore_checkpoint_path = args.restore_checkpoint_path
 
         # CACHE STUFF
@@ -68,11 +69,12 @@ class BaseRunner(ABC):
             # Convert to float, but watch out for 0-dim JAX arrays
             self.writer.add_scalar(metric_name, metric_value, num_steps)
 
-        print("-----------")
-        print(
-            f'STEP: {num_steps} reward: {metrics["eval/episode_reward"]} reward_std: {metrics["eval/episode_reward_std"]}'
-        )
-        print("-----------")
+        if "eval/episode_reward" in metrics:
+            print("-----------")
+            print(
+                f'STEP: {num_steps} reward: {metrics["eval/episode_reward"]} reward_std: {metrics["eval/episode_reward_std"]}'
+            )
+            print("-----------")
 
     def policy_params_fn(self, current_step, make_policy, params):
         # save checkpoints
@@ -107,6 +109,9 @@ class BaseRunner(ABC):
         else:
             network_factory = ppo_networks.make_ppo_networks
         self.ppo_training_params["num_timesteps"] = self.num_timesteps
+        self.ppo_training_params["num_envs"] = self.num_envs
+        self.ppo_training_params["log_training_metrics"] = True
+        self.ppo_training_params["training_metrics_steps"] = 100_000
         print(f"PPO params: {self.ppo_training_params}")
 
         train_fn = functools.partial(
