@@ -3,28 +3,35 @@ import argparse
 
 from playground.sigmaban2024.mujoco_infer import MjInfer
 from playground.common.onnx_infer import OnnxInfer
+import meshcat.transformations as tf
 
 
 class FootstepsNet:
     def __init__(self, onnx: str, feet_spacing: float = 0.15):
-        self.footstepsnet_infer = OnnxInfer(onnx, "input.1")
-        self.feet_spacing = feet_spacing
+        """
+        Footsteps Net inference agent, using ONNX
 
+        :param onnx: ONNX footsteps net to load
+        :param feet_spacing: spacing between feet, constant used during training, defaults to 0.15
+        """
+        self.footstepsnet_infer = OnnxInfer(onnx, "input.1")
+        self.feet_spacing: float = feet_spacing
+
+        # Obstacle settings
         self.obstacle_position = [0.0, 0.0]
         self.obstacle_radius = 0.0
 
     def flatten_on_floor(self, T_world_frame: np.ndarray) -> np.ndarray:
-        x, y = T_world_frame[:2, 3]
-        alpha = np.arctan2(T_world_frame[1, 0], T_world_frame[0, 0])
+        """
+        Flattening a frame on the floor
 
-        return np.array(
-            [
-                [np.cos(alpha), -np.sin(alpha), 0, x],
-                [np.sin(alpha), np.cos(alpha), 0, y],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1],
-            ]
-        )
+        :param T_world_frame: _description_
+        :return: _description_
+        """
+        x, y = T_world_frame[:2, 3]
+        yaw = np.arctan2(T_world_frame[1, 0], T_world_frame[0, 0])
+
+        return tf.translation_matrix((x, y, 0)) @ tf.rotation_matrix(yaw, (0, 0, 1))
 
     def infer(
         self,
@@ -34,6 +41,17 @@ class FootstepsNet:
         support_side: str,
         target_side: str,
     ) -> np.ndarray:
+        """
+        Infers the next footstep (dx, dy, dtheta)
+
+        :param T_world_left: Left foot pose
+        :param T_world_right: Right foot
+        :param T_world_target: Target to reach
+        :param support_side: Current support side
+        :param target_side: Side we want to reach the target
+        :return: Next (dx, dy, dtheta) footstep
+        """
+
         sym_sign = -1 if support_side == "left" else 1.0
 
         # Computing T_support_target transformation
@@ -58,7 +76,6 @@ class FootstepsNet:
 
         return action
 
-        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -69,9 +86,11 @@ if __name__ == "__main__":
 
     import meshcat.transformations as tf
 
-    T_world_left = tf.translation_matrix((0., 0., 0.))
-    T_world_right = tf.translation_matrix((0., 0.15, 0.))
-    T_world_target = tf.translation_matrix((0.0, 1.0, 0.))
-    action = footsteps_net.infer(T_world_left, T_world_right, T_world_target, "left", "left")
+    T_world_left = tf.translation_matrix((0.0, 0.0, 0.0))
+    T_world_right = tf.translation_matrix((0.0, 0.15, 0.0))
+    T_world_target = tf.translation_matrix((0.0, 1.0, 0.0))
+    action = footsteps_net.infer(
+        T_world_left, T_world_right, T_world_target, "left", "left"
+    )
 
     print(action)

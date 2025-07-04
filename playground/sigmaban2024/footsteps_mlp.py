@@ -4,10 +4,11 @@ import argparse
 import torch as th
 
 from playground.sigmaban2024.footsteps_mapper import FootstepsMapper
+from playground.sigmaban2024.footsteps_sampler import FootstepsSamples
 
 
 class MLP(th.nn.Module):
-    def __init__(self, input_dimension: int, output_dimension: int, device = "cpu"):
+    def __init__(self, input_dimension: int, output_dimension: int, device="cpu"):
         super().__init__()
 
         self.net = th.nn.Sequential(
@@ -31,11 +32,13 @@ class MLP(th.nn.Module):
 
 
 class FootstepsMapperMLP(FootstepsMapper):
-    def __init__(self, filename: str):
-        super().__init__(filename)
+    def __init__(self):
+        """
+        MLP mapper, not very tested
+        """
 
-    def fit(self):
-        commands, footsteps = mapper.prepare()
+    def fit(self, samples: FootstepsSamples):
+        self.feet_spacing, commands, footsteps = samples.prepare()
 
         self.mlp = MLP(3, 3, device="cuda")
         # commands = th.tensor(commands, dtype=th.float32).to("cuda")
@@ -55,13 +58,15 @@ class FootstepsMapperMLP(FootstepsMapper):
         for k in range(100_000):
             batch_idx = random.choices(indices, k=batch_size)
 
-            loss = th.nn.functional.mse_loss(commands[batch_idx], self.mlp(footsteps[batch_idx]))
+            loss = th.nn.functional.mse_loss(
+                commands[batch_idx], self.mlp(footsteps[batch_idx])
+            )
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             scheduler.step(loss)
-            
+
             print(f"[{k}] loss={loss}, lr={scheduler.get_last_lr()}")
 
             if scheduler.get_last_lr()[0] < 1e-6:
@@ -81,8 +86,8 @@ class FootstepsMapperMLP(FootstepsMapper):
         self.mlp.load()
         self.trained = True
 
-        print(self.mlp(th.tensor([0., 0.03, 0.], dtype=th.float32)))
-        print(self.mlp(th.tensor([0., -0.03, 0.], dtype=th.float32)))
+        print(self.mlp(th.tensor([0.0, 0.03, 0.0], dtype=th.float32)))
+        print(self.mlp(th.tensor([0.0, -0.03, 0.0], dtype=th.float32)))
 
 
 if __name__ == "__main__":
@@ -97,12 +102,14 @@ if __name__ == "__main__":
     parser.add_argument("--train", action="store_true", default=False)
     args = parser.parse_args()
 
-    mapper = FootstepsMapperMLP(args.footsteps)
+    mapper = FootstepsMapperMLP()
 
+    samples = FootstepsSamples()
+    samples.load(args.footsteps)
 
     if args.train:
-        mapper.fit()
+        mapper.fit(samples)
     if args.plot:
         mapper.load()
-        mapper.evaluate()
-        mapper.show_plot()
+        mapper.evaluate(samples)
+        mapper.show_plot(samples)
