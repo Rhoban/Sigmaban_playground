@@ -25,9 +25,9 @@ class FootstepsSampler:
         self.sample_command()
 
     def sample_command(self):
-        command_x = np.random.uniform(*self.mjinfer.COMMANDS_RANGE_X)
-        command_y = np.random.uniform(*self.mjinfer.COMMANDS_RANGE_Y)
-        command_theta = np.random.uniform(*self.mjinfer.COMMANDS_RANGE_THETA)
+        command_x = float(np.random.uniform(*self.mjinfer.COMMANDS_RANGE_X))
+        command_y = float(np.random.uniform(*self.mjinfer.COMMANDS_RANGE_Y))
+        command_theta = float(np.random.uniform(*self.mjinfer.COMMANDS_RANGE_THETA))
 
         self.mjinfer.commands = [
             command_x,
@@ -39,32 +39,13 @@ class FootstepsSampler:
             0.0,
         ]
 
-    def get_T_world_site(self, site_name: str) -> np.ndarray:
-        """
-        Gets the transformation from world to site frame.
-
-        Args:
-            site_name (str): site name
-        """
-        T = np.eye(4)
-        site = self.mjinfer.data.site(site_name)
-        T[:3, :3] = site.xmat.reshape(3, 3)
-        T[:3, 3] = site.xpos
-
-        return T
-
     def walk_one_step(self):
         """
         Walks until the next support is reached
         """
-        support = self.mjinfer.support
-        self.sample_command()
+        current_support = self.mjinfer.support
 
-        while self.mjinfer.support == support:
-            # self.mjinfer.commands[0] = -0.0129
-            # self.mjinfer.commands[1] = -0.187
-            # self.mjinfer.commands[2] = -0.14
-
+        while self.mjinfer.support == current_support:
             self.mjinfer.step()
 
     def compute_footstep(self, support_foot, landing_foot):
@@ -72,13 +53,13 @@ class FootstepsSampler:
         Compute the footstep (dx, dy, dtheta) in support foot from MuJoCo frames
         """
         T_support_landing = np.linalg.inv(
-            self.get_T_world_site(support_foot)
-        ) @ self.get_T_world_site(landing_foot)
+            self.mjinfer.get_T_world_site(support_foot)
+        ) @ self.mjinfer.get_T_world_site(landing_foot)
         dx = T_support_landing[0, 3]
         dy = T_support_landing[1, 3]
         dtheta = np.arctan2(T_support_landing[1, 0], T_support_landing[0, 0])
 
-        return dx, dy, dtheta
+        return float(dx), float(dy), float(dtheta)
 
     def sample(self, samples: int = 1):
         # Letting simulation stabilize
@@ -89,13 +70,13 @@ class FootstepsSampler:
         while self.mjinfer.support != "left":
             self.walk_one_step()
 
-        for _ in range(samples):    
+        for _ in range(samples):
             dx, dy, dtheta = self.compute_footstep("right_foot", "left_foot")
             self.footsteps.append(
                 {
                     "support": "right",
                     "command": self.mjinfer.commands[:3],
-                    "footstep": (dx, dy, dtheta),
+                    "footstep": [dx, dy, dtheta],
                 }
             )
             self.walk_one_step()
@@ -105,13 +86,13 @@ class FootstepsSampler:
                 {
                     "support": "left",
                     "command": self.mjinfer.commands[:3],
-                    "footstep": (dx, dy, dtheta),
+                    "footstep": [dx, dy, dtheta],
                 }
             )
             self.walk_one_step()
 
-        # print(self.footsteps)
-        # input()
+            # print(self.footsteps)
+            # input()
 
     def save(self, filename: str):
         """
@@ -152,9 +133,9 @@ if args.view:
 
 sampler = FootstepsSampler(mjinfer)
 
-for n in tqdm.tqdm(range(args.n_samples // 10)):
+for n in tqdm.tqdm(range(args.n_samples)):
     sampler.reset()
-    sampler.sample(10)
+    sampler.sample()
 
 print(f"Writing data to footsteps.json")
 sampler.save(args.output)
