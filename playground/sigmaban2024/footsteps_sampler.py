@@ -124,15 +124,7 @@ class FootstepsSampler:
         command_y = float(np.random.uniform(*self.mjinfer.COMMANDS_RANGE_Y))
         command_theta = float(np.random.uniform(*self.mjinfer.COMMANDS_RANGE_THETA))
 
-        self.mjinfer.commands = [
-            command_x,
-            command_y,
-            command_theta,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-        ]
+        self.mjinfer.commands = [command_x, command_y, command_theta]
 
     def compute_footstep(
         self, support_foot: str, landing_foot: str
