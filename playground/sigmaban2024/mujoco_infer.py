@@ -59,7 +59,7 @@ class MjInfer(MJInferBase):
 
         self.viewer = None
 
-        self.random_head_and_arm_position = np.random.random(8)*0.0001
+        self.random_head_and_arm_position = (np.random.random(8)-0.5)*2
         # self.random_head_and_arm_position = np.zeros(8)
         # print(self.random_head_and_arm_position)
         # exit()
@@ -163,7 +163,9 @@ class MjInfer(MJInferBase):
                 self.last_action,
                 self.last_last_action,
                 self.last_last_last_action,
-                self.motor_targets if not MASK_HEAD_AND_ARMS else self.motor_targets[8:],
+                self.motor_targets
+                if not MASK_HEAD_AND_ARMS
+                else self.motor_targets[8:],
                 contacts,
                 self.imitation_phase,
             ]
@@ -176,6 +178,7 @@ class MjInfer(MJInferBase):
         lin_vel_x = 0
         lin_vel_y = 0
         ang_vel = 0
+        self.random_head_and_arm_position = (np.random.random(8)-0.5)*2
         if keycode == 265:  # arrow up
             lin_vel_x = self.COMMANDS_RANGE_X[1]
         if keycode == 264:  # arrow down
@@ -193,6 +196,7 @@ class MjInfer(MJInferBase):
             # self.phase_frequency_factor += 0.1
         if keycode == 59:  # m
             self.phase_frequency_factor -= 0.1
+            # self.random_head_and_arm_position = (np.random.random(8)-0.5)*2
         if keycode == 82:  # r
             self.reset()
 
@@ -229,6 +233,7 @@ class MjInfer(MJInferBase):
         self.data.qpos[:] = self.model.keyframe("home").qpos
         self.data.qvel[:] = 0.0
         self.data.ctrl[:] = self.default_actuator
+        self.random_head_and_arm_position = (np.random.random(8)-0.5)*2
 
         self.support = "left"
 
@@ -272,6 +277,7 @@ class MjInfer(MJInferBase):
                 self.data,
                 self.commands,
             )
+
             self.saved_obs.append(obs)
             action = self.policy.infer(obs)
 
