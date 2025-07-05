@@ -667,6 +667,9 @@ class Joystick(sigmaban_base.SigmabanEnv):
         home_offset = self._default_actuator
         if MASK_HEAD_AND_ARMS:
             home_offset = home_offset[8:]
+            _motor_targets = info["motor_targets"][8:]
+        else:
+            _motor_targets = info["motor_targets"]
         state = jp.hstack(
             [
                 # linvel,
@@ -679,7 +682,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 info["last_act"],  # 20
                 info["last_last_act"],  # 20
                 info["last_last_last_act"],  # 20
-                info["motor_targets"],  # 20
+                _motor_targets,
                 contact,  # 2
                 info["imitation_phase"],  # 2
             ]
