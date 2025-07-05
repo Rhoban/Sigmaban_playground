@@ -679,7 +679,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 info["last_act"],  # 20
                 info["last_last_act"],  # 20
                 info["last_last_last_act"],  # 20
-                info["motor_targets"],  # 20
+                info["motor_targets"] if not MASK_HEAD_AND_ARMS else info["motor_targets"][8:],  # 20
                 contact,  # 2
                 info["imitation_phase"],  # 2
             ]

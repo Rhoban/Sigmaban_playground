@@ -59,6 +59,11 @@ class MjInfer(MJInferBase):
 
         self.viewer = None
 
+        # self.random_head_and_arm_position = np.random.random(8)*0.0001
+        self.random_head_and_arm_position = np.zeros(8)
+        # print(self.random_head_and_arm_position)
+        # exit()
+
         print(f"joint names: {self.joint_names}")
         print(f"actuator names: {self.actuator_names}")
         print(f"backlash joint names: {self.backlash_joint_names}")
@@ -158,7 +163,7 @@ class MjInfer(MJInferBase):
                 self.last_action,
                 self.last_last_action,
                 self.last_last_last_action,
-                self.motor_targets,
+                self.motor_targets if not MASK_HEAD_AND_ARMS else self.motor_targets[8:],
                 contacts,
                 self.imitation_phase,
             ]
@@ -292,7 +297,7 @@ class MjInfer(MJInferBase):
 
             # head_targets = self.commands[3:]
             if MASK_HEAD_AND_ARMS:
-                self.motor_targets[:8] = np.zeros(8)
+                self.motor_targets[:8] = self.random_head_and_arm_position
             self.data.ctrl = self.motor_targets.copy()
             # self.data.ctrl = np.zeros(20)
 
