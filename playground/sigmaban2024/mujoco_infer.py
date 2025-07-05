@@ -59,8 +59,8 @@ class MjInfer(MJInferBase):
 
         self.viewer = None
 
-        # self.random_head_and_arm_position = np.random.random(8)*0.0001
-        self.random_head_and_arm_position = np.zeros(8)
+        self.random_head_and_arm_position = np.random.random(8)*0.0001
+        # self.random_head_and_arm_position = np.zeros(8)
         # print(self.random_head_and_arm_position)
         # exit()
 
