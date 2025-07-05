@@ -47,6 +47,7 @@ from playground.sigmaban2024.custom_rewards import reward_imitation, cost_feet_d
 # if set to false, won't require the reference data to be present and won't compute the reference motions polynoms for nothing
 USE_IMITATION_REWARD = True
 USE_MOTOR_SPEED_LIMITS = False
+MASK_HEAD_AND_ARMS = True
 
 
 def default_config() -> config_dict.ConfigDict:
@@ -191,6 +192,9 @@ class Joystick(sigmaban_base.SigmabanEnv):
 
         # # noise in the simu?
         qpos_noise_scale = np.zeros(self._actuators)
+        if MASK_HEAD_AND_ARMS:
+            # mask head and arms
+            qpos_noise_scale = qpos_noise_scale[8:]
 
         hip_ids = [
             idx for idx, j in enumerate(constants.JOINTS_ORDER_NO_HEAD) if "_hip" in j
@@ -201,6 +205,12 @@ class Joystick(sigmaban_base.SigmabanEnv):
         ankle_ids = [
             idx for idx, j in enumerate(constants.JOINTS_ORDER_NO_HEAD) if "_ankle" in j
         ]
+
+        # monkey patch
+        if MASK_HEAD_AND_ARMS:
+            hip_ids = [i - 8 for i in hip_ids]
+            knee_ids = [i - 8 for i in knee_ids]
+            ankle_ids = [i - 8 for i in ankle_ids]
 
         qpos_noise_scale[hip_ids] = self._config.noise_config.scales.hip_pos
         qpos_noise_scale[knee_ids] = self._config.noise_config.scales.knee_pos
@@ -490,6 +500,9 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 + self._config.max_motor_velocity * self.dt,  # control dt
             )
 
+        if MASK_HEAD_AND_ARMS:
+            motor_targets = motor_targets.at[:8].set(jp.zeros(8))
+
         data = mjx_env.step(self.mjx_model, state.data, motor_targets, self.n_substeps)
 
         state.info["motor_targets"] = motor_targets
@@ -612,6 +625,10 @@ class Joystick(sigmaban_base.SigmabanEnv):
         joint_angles = self.get_actuator_joints_qpos(data.qpos)
         joint_backlash = self.get_actuator_backlash_qpos(data.qpos)
 
+        if MASK_HEAD_AND_ARMS:
+            joint_angles = joint_angles[8:]
+            joint_backlash = joint_backlash[8:]
+
         for i in self.backlash_idx_to_add:
             joint_backlash = jp.insert(joint_backlash, i, 0)
 
@@ -627,6 +644,9 @@ class Joystick(sigmaban_base.SigmabanEnv):
 
         # joint_vel = data.qvel[6:]
         joint_vel = self.get_actuator_joints_qvel(data.qvel)
+        if MASK_HEAD_AND_ARMS:
+            joint_vel = joint_vel[8:]
+
         info["rng"], noise_rng = jax.random.split(info["rng"])
         noisy_joint_vel = (
             joint_vel
@@ -644,6 +664,9 @@ class Joystick(sigmaban_base.SigmabanEnv):
         #     * self._config.noise_config.scales.linvel
         # )
 
+        home_offset = self._default_actuator
+        if MASK_HEAD_AND_ARMS:
+            home_offset = home_offset[8:]
         state = jp.hstack(
             [
                 # linvel,
@@ -651,7 +674,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 # noisy_accelerometer,  # 3
                 noisy_gravity,  # 3
                 info["command"],  # 3
-                noisy_joint_angles - self._default_actuator,  # 20
+                noisy_joint_angles - home_offset,  # 20
                 noisy_joint_vel * self._config.dof_vel_scale,  # 20
                 info["last_act"],  # 20
                 info["last_last_act"],  # 20
@@ -675,7 +698,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 gravity,  # 3
                 linvel,  # 3
                 global_angvel,  # 3
-                joint_angles - self._default_actuator,
+                joint_angles - home_offset,
                 joint_vel,
                 root_height,  # 1
                 data.actuator_force,  # 10
@@ -736,6 +759,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 info["current_reference_motion"],
                 info["command"],
                 USE_IMITATION_REWARD,
+                MASK_HEAD_AND_ARMS,
             ),
             "stand_still": cost_stand_still(
                 # info["command"], data.qpos[7:], data.qvel[6:], self._default_pose
