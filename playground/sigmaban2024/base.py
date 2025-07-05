@@ -135,6 +135,10 @@ class SigmabanEnv(mjx_env.MjxEnv):
     def get_body_id_from_name(self, name: str) -> int:
         """Return the id of a specified body"""
         return mujoco.mj_name2id(self._mj_model, mujoco.mjtObj.mjOBJ_BODY, name)
+    
+    def get_site_id_from_name(self, name: str) -> int:
+        """Return the id of a specified site"""
+        return mujoco.mj_name2id(self._mj_model, mujoco.mjtObj.mjOBJ_SITE, name)
 
     def get_actuator_id_from_name(self, name: str) -> int:
         """Return the id of a specified actuator"""
