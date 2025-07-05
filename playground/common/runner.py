@@ -61,7 +61,7 @@ class BaseRunner(ABC):
             self.wandb = True
             run = wandb.init(
                 project="sigmaban_playground",
-                name=f"{socket.gethostname()} {self.output_dir}",
+                name=f"{socket.gethostname()} {os.path.basename(self.output_dir)}",
                 save_code=True,
             )
 
