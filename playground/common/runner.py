@@ -5,6 +5,7 @@ Inspired from https://github.com/kscalelabs/mujoco_playground/blob/master/playgr
 
 from pathlib import Path
 from abc import ABC
+import socket
 import argparse
 import functools
 from datetime import datetime
@@ -31,6 +32,7 @@ class BaseRunner(ABC):
         """
         self.args = args
         self.output_dir = args.output_dir
+        os.makedirs(self.output_dir, exist_ok=True)
         self.output_dir = Path.cwd() / Path(self.output_dir)
 
         self.env_config = None
@@ -57,7 +59,20 @@ class BaseRunner(ABC):
 
         if args.wandb:
             self.wandb = True
-            wandb.init(project="sigmaban_playground", name="training")
+            run = wandb.init(
+                project="sigmaban_playground",
+                name=f"{socket.gethostname()} {self.output_dir}",
+                save_code=True,
+            )
+
+            def include_fn(x):
+                extensions = [".py", ".yaml", ".json", ".toml", ".xml"]
+                for ext in extensions:
+                    if x.endswith(ext):
+                        return True
+                return False
+
+            run.log_code(root="playground", include_fn=include_fn)
         else:
             self.wandb = False
 
