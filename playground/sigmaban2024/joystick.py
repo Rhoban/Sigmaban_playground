@@ -277,8 +277,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
         rng, key = jax.random.split(rng)
 
         # multiply actual joints with noise (excluding floating base and backlash)
-        qpos_j = self.get_actuator_joints_qpos(qpos) * jax.random.uniform(
-            key, (self._actuators,), minval=0.5, maxval=1.5
+        qpos_j = self.get_actuator_joints_qpos(qpos) + jax.random.uniform(
+            key, (self._actuators,), minval=0.1, maxval=0.1
         )
         qpos = self.set_actuator_joints_qpos(qpos_j, qpos)
         # print(f'DEBUG2 joint qpos: {qpos}')
@@ -339,6 +339,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
             "imitation_i": 0,
             "current_reference_motion": current_reference_motion,
             "imitation_phase": jp.zeros(2),
+            "support_is_left": 1
         }
 
         metrics = {}
@@ -363,20 +364,14 @@ class Joystick(sigmaban_base.SigmabanEnv):
         reward, done = jp.zeros(2)
         return mjx_env.State(data, obs, reward, done, metrics, info)
 
-    def _get_projected_foot(self, data, foot="left"):
-        if foot not in ["left", "right"]:
+    def _get_projected_foot(self, data, side="left"):
+        if side not in ["left", "right"]:
             raise ValueError("foot must be 'left' or 'right'")
-        # body_id = mujoco.mj_name2id(
-        #     self.mjx_model, mujoco.mjtObj.mjOBJ_BODY, f"{foot}_ps_2"
-        # )
-        # body_id = self.mjx_model.body(name=f"{foot}_ps_2")
-        # body_id = self.mjx_model.mj_name2id("body", f"{foot}_ps_2")
-        body_id = self.get_body_id_from_name(f"{foot}_ps_2")
 
-        pos = data.xpos[body_id]  # np.array([x, y, z])
+        site_id = self.get_site_id_from_name(f"{side}_foot")
 
-        offset = jp.array([0.14 / 2, -0.08 / 2, 0.0])
-        mat = data.xmat[body_id].reshape(3, 3)  # rotation matrix
+        pos = data.site_xpos[site_id]  # (x, y, z)
+        mat = data.site_xmat[site_id].reshape(3, 3)  # R_world_foot
 
         # project pos on the ground
         pos = pos.at[2].set(0.001)
@@ -385,26 +380,23 @@ class Joystick(sigmaban_base.SigmabanEnv):
         theta = jp.arctan2(mat[1, 0], mat[0, 0])
 
         # Build a pure yaw rotation matrix
-        mat = jp.array(
+        T_world_foot = jp.array(
             [
-                [jp.cos(theta), -jp.sin(theta), 0],
-                [jp.sin(theta), jp.cos(theta), 0],
-                [0, 0, 1],
+                [jp.cos(theta), -jp.sin(theta), 0, pos[0]],
+                [jp.sin(theta), jp.cos(theta), 0, pos[1]],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1],
             ]
         )
 
-        # apply the offset to the position resulting from the rotation
-        # the offset is in the local frame of the left foot
-        offset_world = mat @ offset
-        # offset_world = jp.matmul(mat, offset)
-
-        pos += offset_world
-
-        return pos, theta, mat
+        return T_world_foot
 
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
         if USE_IMITATION_REWARD:
             state.info["imitation_i"] += 1
+            support_was_left = state.info["support_is_left"]
+            state.info["support_is_left"] = jp.where(state.info["imitation_i"] < self.PRM.nb_steps_in_period/2, 1, 0)
+            support_changed = jp.where(support_was_left != state.info["support_is_left"], 1, 0)
             state.info["imitation_i"] = (
                 state.info["imitation_i"] % self.PRM.nb_steps_in_period
             )  # not critical, is already moduloed in get_reference_motion
@@ -709,13 +701,12 @@ class Joystick(sigmaban_base.SigmabanEnv):
     ) -> dict[str, jax.Array]:
         del metrics  # Unused.
 
-        projected_left_foot_pos, _, _ = self._get_projected_foot(data, "left")
+        T_world_left = self._get_projected_foot(data, "left")
+        T_world_right = self._get_projected_foot(data, "right")
+        T_left_right = jp.linalg.inv(T_world_left) @ T_world_right
 
-        projected_right_foot_pos, _, _ = self._get_projected_foot(data, "right")
-
-        feet_dist = jp.linalg.norm(
-            projected_left_foot_pos[:2] - projected_right_foot_pos[:2]
-        )
+        feet_dist = jp.linalg.norm(T_left_right[:3, 3])
+        jax.debug.print("Feet dist: {}", feet_dist)
 
         ret = {
             "tracking_lin_vel": reward_tracking_lin_vel(
