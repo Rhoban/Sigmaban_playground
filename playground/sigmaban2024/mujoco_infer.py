@@ -20,7 +20,6 @@ class MjInfer(MJInferBase):
         model_path: str,
         reference_data: str,
         onnx_model_path: str,
-        standing: bool = False,
         save_obs: bool = False,
     ):
         super().__init__(model_path)
@@ -34,8 +33,7 @@ class MjInfer(MJInferBase):
 
         self.action_filter = LowPassActionFilter(50, cutoff_frequency=37.5)
 
-        if not self.standing:
-            self.PRM = PolyReferenceMotion(reference_data)
+        self.PRM = PolyReferenceMotion(reference_data)
 
         self.policy = OnnxInfer(onnx_model_path, awd=True)
 
@@ -140,9 +138,6 @@ class MjInfer(MJInferBase):
 
         linvel = self.get_linvel(data)
 
-        # if not self.standing:
-        # ref = self.PRM.get_reference_motion(*command[:3], self.imitation_i)
-
         obs = np.concatenate(
             [
                 # linvel,
@@ -239,32 +234,31 @@ class MjInfer(MJInferBase):
         self.t += self.model.opt.timestep
 
         if self.counter % self.decimation == 0:
-            if not self.standing:
-                # if np.linalg.norm(self.commands) > 0.0:
-                self.imitation_i += 1.0 * self.phase_frequency_factor
+            # if np.linalg.norm(self.commands) > 0.0:
+            self.imitation_i += 1.0 * self.phase_frequency_factor
 
-                self.support = (
-                    "left"
-                    if self.imitation_i < self.PRM.nb_steps_in_period / 2
-                    else "right"
-                )
+            self.support = (
+                "left"
+                if self.imitation_i < self.PRM.nb_steps_in_period / 2
+                else "right"
+            )
 
-                self.imitation_i = self.imitation_i % self.PRM.nb_steps_in_period
+            self.imitation_i = self.imitation_i % self.PRM.nb_steps_in_period
 
-                # else:
-                #     self.imitation_i = 0.0
-                # print(self.PRM.nb_steps_in_period)
-                # exit()
-                self.imitation_phase = np.array(
-                    [
-                        np.cos(
-                            self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
-                        ),
-                        np.sin(
-                            self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
-                        ),
-                    ]
-                )
+            # else:
+            #     self.imitation_i = 0.0
+            # print(self.PRM.nb_steps_in_period)
+            # exit()
+            self.imitation_phase = np.array(
+                [
+                    np.cos(
+                        self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
+                    ),
+                    np.sin(
+                        self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
+                    ),
+                ]
+            )
             obs = self.get_obs(
                 self.data,
                 self.commands,
@@ -338,7 +332,6 @@ if __name__ == "__main__":
         type=str,
         default="playground/sigmaban2024/xmls/scene_flat_terrain.xml",
     )
-    parser.add_argument("--standing", action="store_true", default=False)
     parser.add_argument("--save-obs", action="store_true", default=False)
 
     args = parser.parse_args()
@@ -347,7 +340,6 @@ if __name__ == "__main__":
         args.model_path,
         args.reference_data,
         args.onnx_model_path,
-        args.standing,
         args.save_obs,
     )
     mjinfer.run()
