@@ -25,9 +25,6 @@ class MjInfer(MJInferBase):
     ):
         super().__init__(model_path)
 
-        self.standing = standing
-        self.head_control_mode = self.standing
-
         # Params
         self.linearVelocityScale = 1.0
         self.angularVelocityScale = 1.0
@@ -42,19 +39,14 @@ class MjInfer(MJInferBase):
 
         self.policy = OnnxInfer(onnx_model_path, awd=True)
 
-        self.COMMANDS_RANGE_X = [-0.15, 0.15]
+        self.COMMANDS_RANGE_X = [-0.2, 0.3]
         self.COMMANDS_RANGE_Y = [-0.2, 0.2]
         self.COMMANDS_RANGE_THETA = [-1.0, 1.0]  # [-1.0, 1.0]
-
-        self.NECK_PITCH_RANGE = [-0.34, 1.1]
-        self.HEAD_PITCH_RANGE = [-0.78, 0.78]
-        self.HEAD_YAW_RANGE = [-1.5, 1.5]
-        self.HEAD_ROLL_RANGE = [-0.5, 0.5]
 
         self.last_action = np.zeros(self.num_dofs)
         self.last_last_action = np.zeros(self.num_dofs)
         self.last_last_last_action = np.zeros(self.num_dofs)
-        self.commands = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.commands = [0.0, 0.0, 0.0]
 
         self.imitation_i = 0
         self.imitation_phase = np.array([0, 0])
@@ -116,7 +108,7 @@ class MjInfer(MJInferBase):
         return left_contact, right_contact
 
     def set_command(self, vx: float, vy: float, vtheta: float):
-        self.commands = [vx, vy, vtheta] + [0.0] * 4
+        self.commands = [vx, vy, vtheta]
 
     def get_obs(
         self,
@@ -173,53 +165,28 @@ class MjInfer(MJInferBase):
 
     def key_callback(self, keycode):
         print(f"key: {keycode}")
-        if keycode == 72:  # h
-            self.head_control_mode = not self.head_control_mode
         lin_vel_x = 0
         lin_vel_y = 0
         ang_vel = 0
-        if not self.head_control_mode:
-            if keycode == 265:  # arrow up
-                lin_vel_x = self.COMMANDS_RANGE_X[1]
-            if keycode == 264:  # arrow down
-                lin_vel_x = self.COMMANDS_RANGE_X[0]
-            if keycode == 263:  # arrow left
-                lin_vel_y = self.COMMANDS_RANGE_Y[1]
-            if keycode == 262:  # arrow right
-                lin_vel_y = self.COMMANDS_RANGE_Y[0]
-            if keycode == 81:  # a
-                ang_vel = self.COMMANDS_RANGE_THETA[1]
-            if keycode == 69:  # e
-                ang_vel = self.COMMANDS_RANGE_THETA[0]
-            if keycode == 80:  # p
-                self.data.qvel[:2] = [1.0, 0]
-                # self.phase_frequency_factor += 0.1
-            if keycode == 59:  # m
-                self.phase_frequency_factor -= 0.1
-            if keycode == 82:  # r
-                self.reset()
-        else:
-            neck_pitch = 0
-            head_pitch = 0
-            head_yaw = 0
-            head_roll = 0
-            if keycode == 265:  # arrow up
-                head_pitch = self.NECK_PITCH_RANGE[1]
-            if keycode == 264:  # arrow down
-                head_pitch = self.NECK_PITCH_RANGE[0]
-            if keycode == 263:  # arrow left
-                head_yaw = self.HEAD_YAW_RANGE[1]
-            if keycode == 262:  # arrow right
-                head_yaw = self.HEAD_YAW_RANGE[0]
-            if keycode == 81:  # a
-                head_roll = self.HEAD_ROLL_RANGE[1]
-            if keycode == 69:  # e
-                head_roll = self.HEAD_ROLL_RANGE[0]
-
-            self.commands[3] = neck_pitch
-            self.commands[4] = head_pitch
-            self.commands[5] = head_yaw
-            self.commands[6] = head_roll
+        if keycode == 265:  # arrow up
+            lin_vel_x = self.COMMANDS_RANGE_X[1]
+        if keycode == 264:  # arrow down
+            lin_vel_x = self.COMMANDS_RANGE_X[0]
+        if keycode == 263:  # arrow left
+            lin_vel_y = self.COMMANDS_RANGE_Y[1]
+        if keycode == 262:  # arrow right
+            lin_vel_y = self.COMMANDS_RANGE_Y[0]
+        if keycode == 81:  # a
+            ang_vel = self.COMMANDS_RANGE_THETA[1]
+        if keycode == 69:  # e
+            ang_vel = self.COMMANDS_RANGE_THETA[0]
+        if keycode == 80:  # p
+            self.data.qvel[:2] = [1.0, 0]
+            # self.phase_frequency_factor += 0.1
+        if keycode == 59:  # m
+            self.phase_frequency_factor -= 0.1
+        if keycode == 82:  # r
+            self.reset()
 
         self.commands[0] = lin_vel_x
         self.commands[1] = lin_vel_y

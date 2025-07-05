@@ -100,14 +100,9 @@ def default_config() -> config_dict.ConfigDict:
             interval_range=[3.0, 7.0],
             magnitude_range=[0.3, 1.0],
         ),
-        lin_vel_x=[-0.15, 0.15],
+        lin_vel_x=[-0.2, 0.3],
         lin_vel_y=[-0.2, 0.2],
         ang_vel_yaw=[-1.0, 1.0],  # [-1.0, 1.0]
-        neck_pitch_range=[-0.34, 1.1],
-        head_pitch_range=[-0.78, 0.78],
-        head_yaw_range=[-2.7, 2.7],
-        head_roll_range=[-0.5, 0.5],
-        head_range_factor=1.0,  # to make it easier
     )
 
 
@@ -655,7 +650,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 noisy_gyro,  # 3
                 # noisy_accelerometer,  # 3
                 noisy_gravity,  # 3
-                info["command"],  # 7
+                info["command"],  # 3
                 noisy_joint_angles - self._default_actuator,  # 20
                 noisy_joint_vel * self._config.dof_vel_scale,  # 20
                 info["last_act"],  # 20
@@ -775,43 +770,15 @@ class Joystick(sigmaban_base.SigmabanEnv):
             maxval=self._config.ang_vel_yaw[1],
         )
 
-        neck_pitch = jax.random.uniform(
-            rng5,
-            minval=self._config.neck_pitch_range[0] * self._config.head_range_factor,
-            maxval=self._config.neck_pitch_range[1] * self._config.head_range_factor,
-        )
-
-        head_pitch = jax.random.uniform(
-            rng6,
-            minval=self._config.head_pitch_range[0] * self._config.head_range_factor,
-            maxval=self._config.head_pitch_range[1] * self._config.head_range_factor,
-        )
-
-        head_yaw = jax.random.uniform(
-            rng7,
-            minval=self._config.head_yaw_range[0] * self._config.head_range_factor,
-            maxval=self._config.head_yaw_range[1] * self._config.head_range_factor,
-        )
-
-        head_roll = jax.random.uniform(
-            rng8,
-            minval=self._config.head_roll_range[0] * self._config.head_range_factor,
-            maxval=self._config.head_roll_range[1] * self._config.head_range_factor,
-        )
-
         # With 10% chance, set everything to zero.
         return jp.where(
             jax.random.bernoulli(rng4, p=0.1),
-            jp.zeros(7),
+            jp.zeros(3),
             jp.hstack(
                 [
                     lin_vel_x,
                     lin_vel_y,
                     ang_vel_yaw,
-                    neck_pitch,
-                    head_pitch,
-                    head_yaw,
-                    head_roll,
                 ]
             ),
         )
