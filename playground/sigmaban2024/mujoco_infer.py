@@ -12,6 +12,7 @@ from playground.common.utils import LowPassActionFilter
 from playground.sigmaban2024.mujoco_infer_base import MJInferBase
 
 USE_MOTOR_SPEED_LIMITS = False
+MASK_HEAD_AND_ARMS = True
 
 
 class MjInfer(MJInferBase):
@@ -130,6 +131,10 @@ class MjInfer(MJInferBase):
         joint_angles = self.get_actuator_joints_qpos(data.qpos)
         joint_vel = self.get_actuator_joints_qvel(data.qvel)
 
+        if MASK_HEAD_AND_ARMS:
+            joint_angles = joint_angles[8:]
+            joint_vel = joint_vel[8:]
+
         # add noise to joint vel
         # joint_vel += np.random.random(20)*1.5
 
@@ -138,6 +143,9 @@ class MjInfer(MJInferBase):
 
         linvel = self.get_linvel(data)
 
+        home_offset = self.default_actuator
+        if MASK_HEAD_AND_ARMS:
+            home_offset = home_offset[8:]
         obs = np.concatenate(
             [
                 # linvel,
@@ -145,7 +153,7 @@ class MjInfer(MJInferBase):
                 # accelerometer,
                 gravity,
                 command,
-                joint_angles - self.default_actuator,
+                joint_angles - home_offset,
                 joint_vel * self.dof_vel_scale,
                 self.last_action,
                 self.last_last_action,
@@ -251,12 +259,8 @@ class MjInfer(MJInferBase):
             # exit()
             self.imitation_phase = np.array(
                 [
-                    np.cos(
-                        self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
-                    ),
-                    np.sin(
-                        self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi
-                    ),
+                    np.cos(self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi),
+                    np.sin(self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi),
                 ]
             )
             obs = self.get_obs(
@@ -287,7 +291,8 @@ class MjInfer(MJInferBase):
                 self.prev_motor_targets = self.motor_targets.copy()
 
             # head_targets = self.commands[3:]
-            # self.motor_targets[5:9] = head_targets
+            if MASK_HEAD_AND_ARMS:
+                self.motor_targets[:8] = np.zeros(8)
             self.data.ctrl = self.motor_targets.copy()
             # self.data.ctrl = np.zeros(20)
 

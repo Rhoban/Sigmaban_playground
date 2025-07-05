@@ -11,7 +11,9 @@ def reward_imitation(
     reference_frame: jax.Array,
     cmd: jax.Array,
     use_imitation_reward: bool = False,
+    mask_head_and_arms: bool = False,
 ) -> jax.Array:
+
     if not use_imitation_reward:
         return jp.nan_to_num(0.0)
 
@@ -38,7 +40,6 @@ def reward_imitation(
     # w_joint_pos = 15.0
     # w_joint_vel = 1.0e-3
     # w_contact = 5.0
-
 
     # dimensions_names = [
     #     0  "pos head_yaw",
@@ -120,8 +121,16 @@ def reward_imitation(
     ref_joint_pos = reference_frame[joint_pos_slice_start:joint_pos_slice_end]
     joint_pos = joints_qpos
 
+    if mask_head_and_arms:
+        joint_pos = joint_pos[8:]
+        ref_joint_pos = ref_joint_pos[8:]
+
     ref_joint_vels = reference_frame[joint_vels_slice_start:joint_vels_slice_end]
     joint_vel = joints_qvel
+
+    if mask_head_and_arms:
+        joint_vel = joint_vel[8:]
+        ref_joint_vels = ref_joint_vels[8:]
 
     ref_foot_contacts = reference_frame[
         foot_contacts_slice_start:foot_contacts_slice_end
@@ -170,7 +179,7 @@ def reward_imitation(
     return jp.nan_to_num(reward)
 
 
-def cost_feet_rectangle_contact(feet_rectangle_contact:jax.Array):
+def cost_feet_rectangle_contact(feet_rectangle_contact: jax.Array):
     return jp.nan_to_num(-jp.sum(feet_rectangle_contact))
 
 
