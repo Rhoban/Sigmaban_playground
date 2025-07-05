@@ -31,9 +31,11 @@ class Trajectory:
                 scene,
                 [pos[0], pos[1], theta],
                 [0.14, 0.08],
-                color=self.left_foot_color
-                if support_foot == "left"
-                else self.right_foot_color,
+                color=(
+                    self.left_foot_color
+                    if support_foot == "left"
+                    else self.right_foot_color
+                ),
             )
 
     def sample_trajectory(
@@ -206,7 +208,9 @@ class ApproachSimulator:
             arrived = False
 
             while not arrived:
-                self.mjinfer.viewer.user_scn.ngeom = 0  # Clear previous custom geometries
+                self.mjinfer.viewer.user_scn.ngeom = (
+                    0  # Clear previous custom geometries
+                )
                 self.draw_footstep(T_world_target)
                 T_world_left = self.mjinfer.get_T_world_site("left_foot")
                 T_world_right = self.mjinfer.get_T_world_site("right_foot")
@@ -229,31 +233,11 @@ class ApproachSimulator:
                 step = trajectory[0]
                 dx, dy, dtheta = step["dx"], step["dy"], step["dtheta"]
 
-                vx, vy, vtheta = self.mapper.remap(dx, dy, dtheta)
+                # vx, vy, vtheta = self.mapper.remap(dx, dy, dtheta)
+                vx, vy, vtheta = dx, dy, dtheta
+
                 self.mjinfer.set_command(vx, vy, vtheta)
                 self.mjinfer.walk_one_step()
-
-            # while not arrived:
-            #     T_world_left = self.mjinfer.get_T_world_site("left_foot")
-            #     T_world_right = self.mjinfer.get_T_world_site("right_foot")
-
-            #     T_right_target = np.linalg.inv(T_world_right) @ T_world_target
-            #     error_pos = np.linalg.norm(T_right_target[:2, 3])
-            #     error_yaw = abs(np.arctan2(T_right_target[1, 0], T_right_target[0, 0]))
-            #     arrived = error_pos < 1.5e-2 and error_yaw < np.deg2rad(5)
-
-            #     dx, dy, dtheta = self.footsteps_net.infer(
-            #         T_world_left,
-            #         T_world_right,
-            #         T_world_target,
-            #         self.mjinfer.support,
-            #         "right",
-            #     )
-
-            #     vx, vy, vtheta = self.mapper.remap(dx, dy, dtheta)
-
-            #     self.mjinfer.set_command(vx, vy, vtheta)
-            #     self.mjinfer.walk_one_step()
 
 
 if __name__ == "__main__":

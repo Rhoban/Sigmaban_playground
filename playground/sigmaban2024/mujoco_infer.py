@@ -37,9 +37,9 @@ class MjInfer(MJInferBase):
 
         self.policy = OnnxInfer(onnx_model_path, awd=True)
 
-        self.COMMANDS_RANGE_X = [-0.2, 0.3]
-        self.COMMANDS_RANGE_Y = [-0.2, 0.2]
-        self.COMMANDS_RANGE_THETA = [-1.0, 1.0]  # [-1.0, 1.0]
+        self.COMMANDS_RANGE_X = [-0.1, 0.1]
+        self.COMMANDS_RANGE_Y = [-0.05, 0.05]
+        self.COMMANDS_RANGE_THETA = [-0.5, 0.5]  # [-1.0, 1.0]
 
         self.last_action = np.zeros(self.num_dofs)
         self.last_last_action = np.zeros(self.num_dofs)
