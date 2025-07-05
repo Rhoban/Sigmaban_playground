@@ -22,6 +22,40 @@ def reward_tracking_lin_vel(
     return jp.nan_to_num(jp.exp(-lin_vel_error / tracking_sigma))
 
 
+def reward_tracking_footsteps(
+    command: jax.Array,
+    T_world_left: jax.Array,
+    T_world_right: jax.Array,
+    support_was_left: jax.Array,
+    support_changed: jax.Array,
+    feet_spacing,
+) -> jax.Array:
+
+    # Target footstep, expressed in support foot
+    y_offset = jp.where(support_was_left, -feet_spacing, feet_spacing)
+    T_support_target = jp.array(
+        [
+            [jp.cos(command[2]), -jp.sin(command[2]), 0, command[0]],
+            [jp.sin(command[2]), jp.cos(command[2]), 0, command[1] + y_offset],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ]
+    )
+
+    # Computing placement error
+    T_world_support = jp.where(support_was_left, T_world_left, T_world_right)
+    T_world_flying = jp.where(support_was_left, T_world_right, T_world_left)
+    T_target_flying = jp.linalg.inv(T_world_flying) @ T_world_support @ T_support_target
+
+    pos_error = jp.linalg.norm(T_target_flying[:2, 3])
+    yaw_error = jp.abs(jp.arctan2(T_target_flying[1, 0], T_target_flying[0, 0]))
+    error = 5 * pos_error + yaw_error
+
+    placement_reward = jp.exp(-error * 5)
+
+    return jp.where(support_changed, placement_reward, 0)
+
+
 def reward_tracking_ang_vel(
     commands: jax.Array,
     ang_vel: jax.Array,

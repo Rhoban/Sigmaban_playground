@@ -33,6 +33,7 @@ from . import base as sigmaban_base
 from playground.common.poly_reference_motion import PolyReferenceMotion
 from playground.common.rewards import (
     reward_tracking_lin_vel,
+    reward_tracking_footsteps,
     reward_tracking_ang_vel,
     # cost_orientation,
     cost_torques,
@@ -81,7 +82,8 @@ def default_config() -> config_dict.ConfigDict:
         ),
         reward_config=config_dict.create(
             scales=config_dict.create(
-                tracking_lin_vel=2.5,
+                # tracking_lin_vel=2.5,
+                tracking_footsteps=45.0,
                 tracking_ang_vel=4.0,
                 # orientation=-0.5,
                 torques=-1.0e-2,
@@ -334,7 +336,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
             "imitation_i": 0,
             "current_reference_motion": current_reference_motion,
             "imitation_phase": jp.zeros(2),
-            "support_is_left": 1
+            "support_is_left": 1,
         }
 
         metrics = {}
@@ -390,8 +392,12 @@ class Joystick(sigmaban_base.SigmabanEnv):
         if USE_IMITATION_REWARD:
             state.info["imitation_i"] += 1
             support_was_left = state.info["support_is_left"]
-            state.info["support_is_left"] = jp.where(state.info["imitation_i"] < self.PRM.nb_steps_in_period/2, 1, 0)
-            support_changed = jp.where(support_was_left != state.info["support_is_left"], 1, 0)
+            state.info["support_is_left"] = jp.where(
+                state.info["imitation_i"] < self.PRM.nb_steps_in_period / 2, 1, 0
+            )
+            support_changed = jp.where(
+                support_was_left != state.info["support_is_left"], 1, 0
+            )
             state.info["imitation_i"] = (
                 state.info["imitation_i"] % self.PRM.nb_steps_in_period
             )  # not critical, is already moduloed in get_reference_motion
@@ -511,6 +517,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
             done,
             first_contact,
             contact,
+            support_was_left,
+            support_changed,
         )
         # FIXME
         rewards = {
@@ -693,6 +701,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
         done: jax.Array,
         first_contact: jax.Array,
         contact: jax.Array,
+        support_was_left: jax.Array,
+        support_changed: jax.Array,
     ) -> dict[str, jax.Array]:
         del metrics  # Unused.
 
@@ -701,13 +711,20 @@ class Joystick(sigmaban_base.SigmabanEnv):
         T_left_right = jp.linalg.inv(T_world_left) @ T_world_right
 
         feet_dist = jp.linalg.norm(T_left_right[:3, 3])
-        jax.debug.print("Feet dist: {}", feet_dist)
 
         ret = {
-            "tracking_lin_vel": reward_tracking_lin_vel(
+            # "tracking_lin_vel": reward_tracking_lin_vel(
+            #     info["command"],
+            #     self.get_local_linvel(data),
+            #     self._config.reward_config.tracking_sigma,
+            # ),
+            "tracking_footsteps": reward_tracking_footsteps(
                 info["command"],
-                self.get_local_linvel(data),
-                self._config.reward_config.tracking_sigma,
+                T_world_left,
+                T_world_right,
+                support_was_left,
+                support_changed,
+                self.PRM.feet_spacing,
             ),
             "tracking_ang_vel": reward_tracking_ang_vel(
                 info["command"],
@@ -747,19 +764,26 @@ class Joystick(sigmaban_base.SigmabanEnv):
         return ret
 
     def sample_command(self, rng: jax.Array) -> jax.Array:
-        rng1, rng2, rng3, rng4, rng5, rng6, rng7, rng8 = jax.random.split(rng, 8)
+        rng1, rng2, rng3, rng4 = jax.random.split(rng, 4)
 
-        lin_vel_x = jax.random.uniform(
-            rng1, minval=self._config.lin_vel_x[0], maxval=self._config.lin_vel_x[1]
+        # Choosing a (dx, dy, dtheta) from reference data
+        dx = jax.random.uniform(
+            rng1,
+            minval=jp.min(jp.array(self.PRM.dxs)),
+            maxval=jp.max(jp.array(self.PRM.dxs)),
         )
-        lin_vel_y = jax.random.uniform(
-            rng2, minval=self._config.lin_vel_y[0], maxval=self._config.lin_vel_y[1]
+        dy = jax.random.uniform(
+            rng2,
+            minval=jp.min(jp.array(self.PRM.dys)),
+            maxval=jp.max(jp.array(self.PRM.dys)),
         )
-        ang_vel_yaw = jax.random.uniform(
+        dtheta = jax.random.uniform(
             rng3,
-            minval=self._config.ang_vel_yaw[0],
-            maxval=self._config.ang_vel_yaw[1],
+            minval=jp.min(jp.array(self.PRM.dthetas)),
+            maxval=jp.max(jp.array(self.PRM.dthetas)),
         )
+
+        # jax.debug.print("Sampling dx={}, dy={}, dtheta={}", dx, dy, dtheta)
 
         # With 10% chance, set everything to zero.
         return jp.where(
@@ -767,9 +791,9 @@ class Joystick(sigmaban_base.SigmabanEnv):
             jp.zeros(3),
             jp.hstack(
                 [
-                    lin_vel_x,
-                    lin_vel_y,
-                    ang_vel_yaw,
+                    dx,
+                    dy,
+                    dtheta,
                 ]
             ),
         )
