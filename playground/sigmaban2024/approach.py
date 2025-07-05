@@ -50,7 +50,7 @@ class Trajectory:
 
         self.trajectory = []
         nb_steps = 0
-        while not arrived or nb_steps < 100:
+        while not arrived and nb_steps < 100:
             dx, dy, dtheta = self.footsteps_net.infer(
                 T_world_left,
                 T_world_right,
@@ -211,6 +211,13 @@ class ApproachSimulator:
                 T_world_left = self.mjinfer.get_T_world_site("left_foot")
                 T_world_right = self.mjinfer.get_T_world_site("right_foot")
 
+                T_right_target = np.linalg.inv(T_world_right) @ T_world_target
+                error_pos = np.linalg.norm(T_right_target[:2, 3])
+                error_yaw = abs(np.arctan2(T_right_target[1, 0], T_right_target[0, 0]))
+                arrived = error_pos < 1.5e-2 and error_yaw < np.deg2rad(5)
+                if arrived:
+                    break
+
                 trajectory = self.traj.sample_trajectory(
                     T_world_left,
                     T_world_right,
@@ -223,12 +230,6 @@ class ApproachSimulator:
                 dx, dy, dtheta = step["dx"], step["dy"], step["dtheta"]
 
                 vx, vy, vtheta = self.mapper.remap(dx, dy, dtheta)
-
-                T_right_target = np.linalg.inv(T_world_right) @ T_world_target
-                error_pos = np.linalg.norm(T_right_target[:2, 3])
-                error_yaw = abs(np.arctan2(T_right_target[1, 0], T_right_target[0, 0]))
-                arrived = error_pos < 1.5e-2 and error_yaw < np.deg2rad(5)
-
                 self.mjinfer.set_command(vx, vy, vtheta)
                 self.mjinfer.walk_one_step()
 
