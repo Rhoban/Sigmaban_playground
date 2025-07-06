@@ -49,7 +49,7 @@ from playground.sigmaban2024.custom_rewards import reward_imitation, cost_feet_d
 USE_IMITATION_REWARD = True
 USE_MOTOR_SPEED_LIMITS = False
 MASK_HEAD_AND_ARMS = True
-USE_FOOTSTEP_REWARD = False
+USE_FOOTSTEP_REWARD = True
 
 
 def default_config() -> config_dict.ConfigDict:
@@ -429,7 +429,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 ]
             )
 
-            state.info["current_reference_motion"], _, _ = self.PRM.get_reference_motion(
+            state.info["current_reference_motion"], target_left, target_right = self.PRM.get_reference_motion(
                 state.info["command"][0],
                 state.info["command"][1],
                 state.info["command"][2],
@@ -535,6 +535,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
             contact,
             support_was_left,
             support_changed,
+            target_left,
+            target_right
         )
         # FIXME
         rewards = {
@@ -732,6 +734,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
         contact: jax.Array,
         support_was_left: jax.Array,
         support_changed: jax.Array,
+        target_left: jax.Array,
+        target_right: jax.Array,
     ) -> dict[str, jax.Array]:
         del metrics  # Unused.
 
@@ -781,6 +785,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 support_was_left,
                 support_changed,
                 self.PRM.feet_spacing,
+                target_left,
+                target_right,
             )
         else:
             ret["tracking_lin_vel"] = reward_tracking_lin_vel(

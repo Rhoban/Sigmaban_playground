@@ -29,14 +29,17 @@ def reward_tracking_footsteps(
     support_was_left: jax.Array,
     support_changed: jax.Array,
     feet_spacing,
+    target_left: jax.Array,
+    target_right: jax.Array,
 ) -> jax.Array:
-
+    
     # Target footstep, expressed in support foot
+    target = jp.where(support_was_left, target_left, target_right)
     y_offset = jp.where(support_was_left, -feet_spacing, feet_spacing)
     T_support_target = jp.array(
         [
-            [jp.cos(command[2]), -jp.sin(command[2]), 0, command[0]],
-            [jp.sin(command[2]), jp.cos(command[2]), 0, command[1] + y_offset],
+            [jp.cos(target[2]), -jp.sin(target[2]), 0, target[0]],
+            [jp.sin(target[2]), jp.cos(target[2]), 0, target[1] + y_offset],
             [0, 0, 1, 0],
             [0, 0, 0, 1],
         ]
