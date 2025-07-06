@@ -38,9 +38,9 @@ class MjInfer(MJInferBase):
 
         self.policy = OnnxInfer(onnx_model_path, awd=True)
 
-        self.COMMANDS_RANGE_X = [-0.1, 0.1]
-        self.COMMANDS_RANGE_Y = [-0.05, 0.05]
-        self.COMMANDS_RANGE_THETA = [-0.5, 0.5]  # [-1.0, 1.0]
+        self.COMMANDS_RANGE_X = [np.min(self.PRM.dxs), np.max(self.PRM.dxs)]
+        self.COMMANDS_RANGE_Y = [np.min(self.PRM.dys), np.max(self.PRM.dys)]
+        self.COMMANDS_RANGE_THETA = [np.min(self.PRM.dthetas), np.max(self.PRM.dthetas)]
 
         self.last_action = np.zeros(self.num_dofs)
         self.last_last_action = np.zeros(self.num_dofs)
