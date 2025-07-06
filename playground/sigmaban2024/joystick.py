@@ -93,7 +93,7 @@ def default_config() -> config_dict.ConfigDict:
                 action_rate=-0.75,  # was -0.3
                 stand_still=0.0,  # was -0.3
                 alive=20.0,
-                imitation=1.0,
+                imitation=0.0,
                 feet_dist=-2.0,
                 # head_pos=-1.0,
             ),
@@ -350,6 +350,10 @@ class Joystick(sigmaban_base.SigmabanEnv):
             "current_reference_motion": current_reference_motion,
             "imitation_phase": jp.zeros(2),
             "support_is_left": 1,
+            "support_was_left": 1,
+            "support_changed": 0,
+            "target_left": jp.zeros(3),
+            "target_right": jp.zeros(3),
         }
 
         metrics = {}
@@ -404,12 +408,12 @@ class Joystick(sigmaban_base.SigmabanEnv):
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
         if USE_IMITATION_REWARD:
             state.info["imitation_i"] += 1
-            support_was_left = state.info["support_is_left"]
+            state.info["support_was_left"] = state.info["support_is_left"]
             state.info["support_is_left"] = jp.where(
                 state.info["imitation_i"] < self.PRM.nb_steps_in_period / 2, 1, 0
             )
-            support_changed = jp.where(
-                support_was_left != state.info["support_is_left"], 1, 0
+            state.info["support_changed"] = jp.where(
+                state.info["support_was_left"] != state.info["support_is_left"], 1, 0
             )
             state.info["imitation_i"] = (
                 state.info["imitation_i"] % self.PRM.nb_steps_in_period
@@ -429,7 +433,11 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 ]
             )
 
-            state.info["current_reference_motion"], target_left, target_right = self.PRM.get_reference_motion(
+            (
+                state.info["current_reference_motion"],
+                state.info["target_left"],
+                state.info["target_right"],
+            ) = self.PRM.get_reference_motion(
                 state.info["command"][0],
                 state.info["command"][1],
                 state.info["command"][2],
@@ -533,10 +541,6 @@ class Joystick(sigmaban_base.SigmabanEnv):
             done,
             first_contact,
             contact,
-            support_was_left,
-            support_changed,
-            target_left,
-            target_right
         )
         # FIXME
         rewards = {
@@ -669,6 +673,26 @@ class Joystick(sigmaban_base.SigmabanEnv):
         #     * self._config.noise_config.scales.linvel
         # )
 
+        T_world_left = self._get_projected_foot(data, "left")
+        T_world_right = self._get_projected_foot(data, "right")
+
+        # Target footstep, expressed in support foot
+        target = jp.where(info["support_was_left"], info["target_left"], info["target_right"])
+        y_offset = jp.where(info["support_was_left"], -self.PRM.feet_spacing, self.PRM.feet_spacing)
+        T_support_target = jp.array(
+            [
+                [jp.cos(target[2]), -jp.sin(target[2]), 0, target[0]],
+                [jp.sin(target[2]), jp.cos(target[2]), 0, target[1] + y_offset],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1],
+            ]
+        )
+
+        # Computing placement error
+        T_world_support = jp.where(info["support_was_left"], T_world_left, T_world_right)
+        T_world_flying = jp.where(info["support_was_left"], T_world_right, T_world_left)
+        T_flying_target = jp.linalg.inv(T_world_flying) @ T_world_support @ T_support_target
+
         home_offset = self._default_actuator
         if MASK_HEAD_AND_ARMS:
             home_offset = home_offset[8:]
@@ -677,6 +701,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
             _motor_targets = info["motor_targets"]
         state = jp.hstack(
             [
+                T_flying_target[:3, 3],  # 3
+                T_flying_target[:3, :3].ravel(),  # 9
                 # linvel,
                 noisy_gyro,  # 3
                 # noisy_accelerometer,  # 3
@@ -732,10 +758,6 @@ class Joystick(sigmaban_base.SigmabanEnv):
         done: jax.Array,
         first_contact: jax.Array,
         contact: jax.Array,
-        support_was_left: jax.Array,
-        support_changed: jax.Array,
-        target_left: jax.Array,
-        target_right: jax.Array,
     ) -> dict[str, jax.Array]:
         del metrics  # Unused.
 
@@ -782,11 +804,11 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 info["command"],
                 T_world_left,
                 T_world_right,
-                support_was_left,
-                support_changed,
+                info["support_was_left"],
+                info["support_changed"],
                 self.PRM.feet_spacing,
-                target_left,
-                target_right,
+                info["target_left"],
+                info["target_right"],
             )
         else:
             ret["tracking_lin_vel"] = reward_tracking_lin_vel(
