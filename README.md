@@ -35,3 +35,20 @@ Infer mujoco
 ```bash
 uv run playground/sigmaban_2024/mujoco_infer.py -o <path_to_.onnx> --model_path playground/sigmaban2024/xmls/scene_flat_terrain_backlash.xml
 ```
+
+# Mapper
+
+Run the sampler:
+
+```bash
+uv run playground/sigmaban2024/footsteps_sampler.py -o <path_to_onnx>
+```
+
+This will generate `footsteps.json` 
+
+Run the mapper:
+
+```bash
+uv run playground/sigmaban2024/mapper.py --plot
+```
+
