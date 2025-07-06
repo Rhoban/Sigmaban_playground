@@ -21,6 +21,6 @@ nohup uv run playground/sigmaban2024/runner.py \
 	--wandb \
 	> $OUT_LOG &
 
-
+sleep 3
 echo "Showing log"
 tail -f $OUT_LOG
