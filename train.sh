@@ -10,7 +10,7 @@ echo "Killing existent python"
 killall -9 python3
 
 echo "Running in background..."
-CHECKPOINT_DIR=checkpoints/$i
+CHECKPOINT_DIR=checkpoints/$1 
 mkdir -p $CHECKPOINT_DIR
 OUT_LOG=$CHECKPOINT_DIR/out.log
 touch $OUT_LOG
