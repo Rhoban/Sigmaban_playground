@@ -7,7 +7,7 @@ import meshcat.transformations as tf
 
 
 class FootstepsNet:
-    def __init__(self, onnx: str, feet_spacing: float = 0.15):
+    def __init__(self, onnx: str, feet_spacing: float = 0.14):
         """
         Footsteps Net inference agent, using ONNX
 
