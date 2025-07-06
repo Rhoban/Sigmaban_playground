@@ -100,6 +100,7 @@ class BaseRunner(ABC):
         path = f"{self.output_dir}/{d}_{current_step}"
         print(f"Saving checkpoint (step: {current_step}): {path}")
         orbax_checkpointer.save(path, params, force=True, save_args=save_args)
+
         onnx_export_path = f"{self.output_dir}/{d}_{current_step}.onnx"
         export_onnx(
             params,
@@ -108,6 +109,12 @@ class BaseRunner(ABC):
             self.obs_size,  # may not work
             output_path=onnx_export_path,
         )
+
+        latest_path = f"{self.output_dir}/latest.onnx"
+        # Copy the latest ONNX model to the latest path
+        if Path(latest_path).exists():
+            Path(latest_path).unlink()
+        os.symlink(onnx_export_path, latest_path)
 
     def train(self) -> None:
         self.ppo_params = locomotion_params.brax_ppo_config(
