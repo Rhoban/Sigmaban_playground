@@ -10,11 +10,14 @@ echo "Killing existent python"
 killall -9 python3
 
 echo "Running in background..."
-OUT_LOG=checkpoints/$i/out.log
+CHECKPOINT_DIR=checkpoints/$i
+mkdir -p $CHECKPOINT_DIR
+OUT_LOG=$CHECKPOINT_DIR/out.log
+touch $OUT_LOG
 nohup uv run playground/sigmaban2024/runner.py \
 	--task flat_terrain_backlash \
 	--num_timesteps 300000000 \
-	--output_dir checkpoints/$1 \
+	--output_dir $CHECKPOINT_DIR \
 	--wandb \
 	> $OUT_LOG &
 
