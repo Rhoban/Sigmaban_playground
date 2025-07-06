@@ -13,7 +13,7 @@ from playground.sigmaban2024.mujoco_infer_base import MJInferBase
 
 USE_MOTOR_SPEED_LIMITS = False
 MASK_HEAD_AND_ARMS = True
-USE_FOOTSTEP_REWARD = False
+USE_FOOTSTEP_REWARD = True
 
 
 class MjInfer(MJInferBase):
@@ -71,6 +71,27 @@ class MjInfer(MJInferBase):
         print(f"actuator names: {self.actuator_names}")
         print(f"backlash joint names: {self.backlash_joint_names}")
         # print(f"actual joints idx: {self.get_actual_joints_idx()}")
+
+    def make_humanoid_parameters(self):
+        import placo
+
+        humanoid_parameters = placo.HumanoidParameters()
+
+        humanoid_parameters.foot_length = self.PRM.placo_parameters["foot_length"]
+        humanoid_parameters.foot_width = self.PRM.placo_parameters["foot_width"]
+        humanoid_parameters.feet_spacing = self.PRM.placo_parameters["feet_spacing"]
+        humanoid_parameters.walk_max_dx_forward = self.PRM.placo_parameters[
+            "walk_max_dx_forward"
+        ]
+        humanoid_parameters.walk_max_dx_backward = self.PRM.placo_parameters[
+            "walk_max_dx_backward"
+        ]
+        humanoid_parameters.walk_max_dy = self.PRM.placo_parameters["walk_max_dy"]
+        humanoid_parameters.walk_max_dtheta = self.PRM.placo_parameters[
+            "walk_max_dtheta"
+        ]
+
+        return humanoid_parameters
 
     def get_feet_contacts(self, data):
         left_foot_cleat_back_left = self.check_contact(
@@ -166,9 +187,11 @@ class MjInfer(MJInferBase):
                 self.last_action,
                 self.last_last_action,
                 self.last_last_last_action,
-                self.motor_targets
-                if not MASK_HEAD_AND_ARMS
-                else self.motor_targets[8:],
+                (
+                    self.motor_targets
+                    if not MASK_HEAD_AND_ARMS
+                    else self.motor_targets[8:]
+                ),
                 contacts,
                 self.imitation_phase,
             ]
