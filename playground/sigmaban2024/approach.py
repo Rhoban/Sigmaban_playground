@@ -91,7 +91,7 @@ class Trajectory:
             T_right_target = np.linalg.inv(T_world_right) @ T_world_target
             error_pos = np.linalg.norm(T_right_target[:2, 3])
             error_yaw = abs(np.arctan2(T_right_target[1, 0], T_right_target[0, 0]))
-            arrived = error_pos < 1.5e-2 and error_yaw < np.deg2rad(5)
+            arrived = error_pos < 5e-2 and error_yaw < np.deg2rad(5)
 
             support_foot = "left" if support_foot == "right" else "right"
             nb_steps += 1
@@ -218,7 +218,7 @@ class ApproachSimulator:
                 T_right_target = np.linalg.inv(T_world_right) @ T_world_target
                 error_pos = np.linalg.norm(T_right_target[:2, 3])
                 error_yaw = abs(np.arctan2(T_right_target[1, 0], T_right_target[0, 0]))
-                arrived = error_pos < 1.5e-2 and error_yaw < np.deg2rad(5)
+                arrived = error_pos < 5e-2 and error_yaw < np.deg2rad(5)
                 if arrived:
                     break
 
