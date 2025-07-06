@@ -2,7 +2,7 @@ import numpy as np
 import argparse
 import mujoco
 
-from playground.sigmaban2024.mujoco_infer import MjInfer
+from playground.sigmaban2024.mujoco_infer import MjInfer, USE_FOOTSTEP_REWARD
 from playground.sigmaban2024.footsteps_mapper import FootstepsMapper
 from playground.sigmaban2024.footsteps_net import FootstepsNet
 import meshcat.transformations as tf
@@ -232,9 +232,10 @@ class ApproachSimulator:
                 self.traj.draw_trajectory(self.mjinfer.viewer.user_scn, trajectory)
                 step = trajectory[0]
                 dx, dy, dtheta = step["dx"], step["dy"], step["dtheta"]
-
-                # vx, vy, vtheta = self.mapper.remap(dx, dy, dtheta)
-                vx, vy, vtheta = dx, dy, dtheta
+                if USE_FOOTSTEP_REWARD:
+                    vx, vy, vtheta = dx, dy, dtheta
+                else:
+                    vx, vy, vtheta = self.mapper.remap(dx, dy, dtheta)
 
                 self.mjinfer.set_command(vx, vy, vtheta)
                 self.mjinfer.walk_one_step()

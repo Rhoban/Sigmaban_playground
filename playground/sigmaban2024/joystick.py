@@ -85,8 +85,8 @@ def default_config() -> config_dict.ConfigDict:
         reward_config=config_dict.create(
             scales=config_dict.create(
                 tracking_lin_vel=2.5,
-                tracking_footsteps=45.0,
                 tracking_ang_vel=4.0,
+                tracking_footsteps=45.0,
                 # orientation=-0.5,
                 torques=-1.0e-2,
                 # action_rate=-0.375,  # was -1.5
@@ -741,11 +741,6 @@ class Joystick(sigmaban_base.SigmabanEnv):
         feet_dist = jp.linalg.norm(T_left_right[:3, 3])
 
         ret = {
-            "tracking_ang_vel": reward_tracking_ang_vel(
-                info["command"],
-                self.get_gyro(data),
-                self._config.reward_config.tracking_sigma,
-            ),
             # "orientation": cost_orientation(self.get_gravity(data)),
             "torques": cost_torques(data.actuator_force),
             "action_rate": cost_action_rate(action, info["last_act"]),
@@ -791,6 +786,13 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 info["command"],
                 self.get_local_linvel(data),
                 self._config.reward_config.tracking_sigma,
+            )
+            ret["tracking_ang_vel"] = (
+                reward_tracking_ang_vel(
+                    info["command"],
+                    self.get_gyro(data),
+                    self._config.reward_config.tracking_sigma,
+                ),
             )
 
         return ret
