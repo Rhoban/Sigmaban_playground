@@ -129,24 +129,11 @@ def cost_stand_still(
     qpos: jax.Array,
     qvel: jax.Array,
     default_pose: jax.Array,
-    ignore_head: bool = False,
 ) -> jax.Array:
     # TODO no hard coded slices
     cmd_norm = jp.linalg.norm(commands[:3])
-    if not ignore_head:
-        pose_cost = jp.sum(jp.abs(qpos - default_pose))
-        vel_cost = jp.sum(jp.abs(qvel))
-    else:
-        left_leg_pos = qpos[:5]
-        right_leg_pos = qpos[9:]
-        left_leg_vel = qvel[:5]
-        right_leg_vel = qvel[9:]
-        left_leg_default = default_pose[:5]
-        right_leg_default = default_pose[9:]
-        pose_cost = jp.sum(jp.abs(left_leg_pos - left_leg_default)) + jp.sum(
-            jp.abs(right_leg_pos - right_leg_default)
-        )
-        vel_cost = jp.sum(jp.abs(left_leg_vel)) + jp.sum(jp.abs(right_leg_vel))
+    pose_cost = jp.sum(jp.abs(qpos - default_pose))
+    vel_cost = jp.sum(jp.abs(qvel))
 
     return jp.nan_to_num(pose_cost + vel_cost) * (cmd_norm < 0.01)
 

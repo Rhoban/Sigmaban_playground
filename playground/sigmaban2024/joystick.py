@@ -91,7 +91,7 @@ def default_config() -> config_dict.ConfigDict:
                 torques=-1.0e-2,
                 # action_rate=-0.375,  # was -1.5
                 action_rate=-0.75,  # was -0.3
-                stand_still=0.0,  # was -0.3
+                stand_still=-0.3,  # was -0.3
                 alive=20.0,
                 imitation=1.0,
                 feet_dist=-2.0,
@@ -762,7 +762,6 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 self.get_actuator_joints_qpos(data.qpos),
                 self.get_actuator_joints_qvel(data.qvel),
                 self._default_actuator,
-                ignore_head=False,
             ),
             "feet_dist": cost_feet_dist(feet_dist),
             # "head_pos": cost_head_pos(
