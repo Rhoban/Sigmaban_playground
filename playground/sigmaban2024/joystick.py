@@ -787,12 +787,10 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 self.get_local_linvel(data),
                 self._config.reward_config.tracking_sigma,
             )
-            ret["tracking_ang_vel"] = (
-                reward_tracking_ang_vel(
-                    info["command"],
-                    self.get_gyro(data),
-                    self._config.reward_config.tracking_sigma,
-                ),
+            ret["tracking_ang_vel"] = reward_tracking_ang_vel(
+                info["command"],
+                self.get_gyro(data),
+                self._config.reward_config.tracking_sigma,
             )
 
         return ret
