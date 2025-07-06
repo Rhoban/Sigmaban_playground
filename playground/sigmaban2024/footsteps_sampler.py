@@ -2,6 +2,7 @@ import numpy as np
 import json
 import tqdm
 import argparse
+import placo
 
 from playground.sigmaban2024.mujoco_infer import MjInfer
 
@@ -80,9 +81,9 @@ class FootstepsSamples:
         commands_right, footsteps_right = self.get_data("right")
         commands_left, footsteps_left = self.get_data("left")
 
-        feet_spacing = (
-            np.mean(footsteps_right[:, 1]) - np.mean(footsteps_left[:, 1])
-        ) / 2
+        feet_spacing = np.median(np.concatenate(
+            (footsteps_right[:, 1], -footsteps_left[:, 1])
+        ))
 
         footsteps_right[:, 1] -= feet_spacing
         footsteps_left[:, 1] += feet_spacing
@@ -108,6 +109,9 @@ class FootstepsSampler:
         # Data generated
         self.samples = FootstepsSamples()
 
+        # Humanoid parameters
+        self.humanoid_parameters = mjinfer.make_humanoid_parameters()
+
     def reset(self):
         """
         Resets the simulation and sample a random linear velocity
@@ -125,6 +129,18 @@ class FootstepsSampler:
         command_theta = float(np.random.uniform(*self.mjinfer.COMMANDS_RANGE_THETA))
 
         self.mjinfer.commands = [command_x, command_y, command_theta]
+
+    def clipped_command(self):
+        # The footstep is just over, we use the last support to reference the clipping
+        side = (
+            placo.HumanoidRobot_Side.left
+            if self.mjinfer.support == "right"
+            else placo.HumanoidRobot_Side.right
+        )
+
+        return self.humanoid_parameters.ellipsoid_overlap_clip(
+            side, np.array(self.mjinfer.commands)
+        )
 
     def compute_footstep(
         self, support_foot: str, landing_foot: str
@@ -163,11 +179,11 @@ class FootstepsSampler:
 
         for _ in range(samples):
             dx, dy, dtheta = self.compute_footstep("right_foot", "left_foot")
-            self.samples.add("right", self.mjinfer.commands[:3], [dx, dy, dtheta])
+            self.samples.add("right", self.clipped_command().tolist(), [dx, dy, dtheta])
             self.mjinfer.walk_one_step()
 
             dx, dy, dtheta = self.compute_footstep("left_foot", "right_foot")
-            self.samples.add("left", self.mjinfer.commands[:3], [dx, dy, dtheta])
+            self.samples.add("left", self.clipped_command().tolist(), [dx, dy, dtheta])
             self.mjinfer.walk_one_step()
 
 
