@@ -134,7 +134,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
 
         if USE_IMITATION_REWARD:
             self.PRM = PolyReferenceMotion(
-                "playground/sigmaban2024/data/polynomial_coefficients.pkl"
+                "playground/sigmaban2024/data/polynomial_coefficients.pkl",
+                convert_to_speeds=not USE_FOOTSTEP_REWARD,
             )
 
         # Note: First joint is freejoint.
@@ -791,7 +792,6 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 self.get_local_linvel(data),
                 self._config.reward_config.tracking_sigma,
             )
-        
 
         return ret
 

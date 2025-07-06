@@ -3,7 +3,7 @@ import pickle
 
 
 class PolyReferenceMotion:
-    def __init__(self, polynomial_coefficients: str):
+    def __init__(self, polynomial_coefficients: str, convert_to_speeds: bool = True):
         data = pickle.load(open(polynomial_coefficients, "rb"))
         self.dx_range = [0, 0]
         self.dy_range = [0, 0]
@@ -18,8 +18,14 @@ class PolyReferenceMotion:
         self.startend_double_support_ratio = None
         self.start_offset = None
         self.nb_steps_in_period = None
+        self.feet_spacing = None
+        self.convert_to_speeds = convert_to_speeds
 
         self.process(data)
+
+    # # convert to linear and angular velocity
+    def steps_to_vel(self, step_size):
+        return (step_size * 2) / self.period
 
     def process(self, data):
         print("[Poly ref data] Processing ...")
@@ -30,6 +36,7 @@ class PolyReferenceMotion:
             dy = float(split[1])
             dtheta = float(split[2])
 
+
             if self.period is None:
                 self.period = data[name]["period"]
                 self.fps = data[name]["fps"]
@@ -37,8 +44,14 @@ class PolyReferenceMotion:
                 self.startend_double_support_ratio = data[name][
                     "startend_double_support_ratio"
                 ]
+                self.feet_spacing = data[name]["feet_spacing"]
                 self.start_offset = int(self.startend_double_support_ratio * self.fps)
                 self.nb_steps_in_period = int(self.period * self.fps)
+
+            if self.convert_to_speeds:
+                dx = self.steps_to_vel(dx)
+                dy = self.steps_to_vel(dy)
+                dtheta = self.steps_to_vel(dtheta)
 
             if dx not in self.dxs:
                 self.dxs.append(dx)
@@ -93,7 +106,6 @@ class PolyReferenceMotion:
         print("[Poly ref data] Done processing")
 
     def vel_to_index(self, dx, dy, dtheta):
-
         dx = np.clip(dx, self.dx_range[0], self.dx_range[1])
         dy = np.clip(dy, self.dy_range[0], self.dy_range[1])
         dtheta = np.clip(dtheta, self.dtheta_range[0], self.dtheta_range[1])
@@ -120,7 +132,6 @@ class PolyReferenceMotion:
 
 
 if __name__ == "__main__":
-
     PRM = PolyReferenceMotion(
         "playground/open_duck_mini_v2/data/polynomial_coefficients.pkl"
     )
