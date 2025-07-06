@@ -104,6 +104,7 @@ def default_config() -> config_dict.ConfigDict:
             interval_range=[3.0, 7.0],
             magnitude_range=[0.3, 1.0],
         ),
+        # UNUSED
         lin_vel_x=[-0.2, 0.3],
         lin_vel_y=[-0.2, 0.2],
         ang_vel_yaw=[-1.0, 1.0],  # [-1.0, 1.0]
@@ -318,7 +319,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
         push_interval_steps = jp.round(push_interval / self.dt).astype(jp.int32)
 
         if USE_IMITATION_REWARD:
-            current_reference_motion = self.PRM.get_reference_motion(
+            current_reference_motion, _, _ = self.PRM.get_reference_motion(
                 cmd[0], cmd[1], cmd[2], 0
             )
         else:
@@ -428,7 +429,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 ]
             )
 
-            state.info["current_reference_motion"] = self.PRM.get_reference_motion(
+            state.info["current_reference_motion"], _, _ = self.PRM.get_reference_motion(
                 state.info["command"][0],
                 state.info["command"][1],
                 state.info["command"][2],

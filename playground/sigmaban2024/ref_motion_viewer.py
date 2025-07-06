@@ -178,7 +178,7 @@ with mujoco.viewer.launch_passive(
             if not all(val == 0.0 for val in command):
                 imitation_i = step % PRM.nb_steps_in_period
 
-                ref_motion = PRM.get_reference_motion(
+                ref_motion, _, _ = PRM.get_reference_motion(
                     command[0], command[1], command[2], imitation_i
                 )
                 ref_motion = np.array(ref_motion)
