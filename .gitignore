@@ -6,6 +6,8 @@ playground/open_duck_mini_v2_skate/
 robot_saved_obs.pkl
 mujoco_saved_obs.pkl
 checkpoints/
+wandb/
+nohup.out
 .tmp/
 *.onnx
 *.TXT
