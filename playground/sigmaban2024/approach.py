@@ -1,4 +1,5 @@
 import numpy as np
+import placo
 import argparse
 import mujoco
 
@@ -40,6 +41,7 @@ class Trajectory:
 
     def sample_trajectory(
         self,
+        humanoid_parameters: placo.HumanoidParameters,
         T_world_left,
         T_world_right,
         starting_support_foot,
@@ -60,6 +62,16 @@ class Trajectory:
                 support_foot,
                 target_support_foot,
             )
+
+            dx, dy, dtheta = humanoid_parameters.ellipsoid_overlap_clip(
+                (
+                    placo.HumanoidRobot_Side.left
+                    if support_foot == "left"
+                    else placo.HumanoidRobot_Side.right
+                ),
+                np.array([dx, dy, dtheta]),
+            )
+
             self.trajectory.append(
                 {
                     "support": support_foot,
@@ -91,7 +103,7 @@ class Trajectory:
             T_right_target = np.linalg.inv(T_world_right) @ T_world_target
             error_pos = np.linalg.norm(T_right_target[:2, 3])
             error_yaw = abs(np.arctan2(T_right_target[1, 0], T_right_target[0, 0]))
-            arrived = error_pos < 5e-2 and error_yaw < np.deg2rad(5)
+            arrived = error_pos < 1e-2 and error_yaw < np.deg2rad(2)
 
             support_foot = "left" if support_foot == "right" else "right"
             nb_steps += 1
@@ -207,6 +219,12 @@ class ApproachSimulator:
             )
             arrived = False
 
+            params = self.mjinfer.make_humanoid_parameters()
+            params.walk_max_dx_forward = 0.14
+            params.walk_max_dx_backward = 0.05
+            params.walk_max_dy = 0.1
+            params.walk_max_dtheta = np.deg2rad(55)
+
             while not arrived:
                 self.mjinfer.viewer.user_scn.ngeom = (
                     0  # Clear previous custom geometries
@@ -223,6 +241,7 @@ class ApproachSimulator:
                     break
 
                 trajectory = self.traj.sample_trajectory(
+                    params,
                     T_world_left,
                     T_world_right,
                     self.mjinfer.support,
