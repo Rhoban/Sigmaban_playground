@@ -18,7 +18,6 @@ nohup uv run playground/sigmaban2024/runner.py \
 	--wandb \
 	> $OUT_LOG &
 
-# --restore_checkpoint_path $HOME/Sigmaban_playground/checkpoints/2025_07_05_174512_171704320/ \
 
 echo "Showing log"
-tail -f out.log
+tail -f $OUT_LOG
