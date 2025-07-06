@@ -49,6 +49,7 @@ from playground.sigmaban2024.custom_rewards import reward_imitation, cost_feet_d
 USE_IMITATION_REWARD = True
 USE_MOTOR_SPEED_LIMITS = False
 MASK_HEAD_AND_ARMS = True
+USE_FOOTSTEP_REWARD = True
 
 
 def default_config() -> config_dict.ConfigDict:
@@ -83,7 +84,7 @@ def default_config() -> config_dict.ConfigDict:
         ),
         reward_config=config_dict.create(
             scales=config_dict.create(
-                # tracking_lin_vel=2.5,
+                tracking_lin_vel=2.5,
                 tracking_footsteps=45.0,
                 tracking_ang_vel=4.0,
                 # orientation=-0.5,
@@ -739,19 +740,6 @@ class Joystick(sigmaban_base.SigmabanEnv):
         feet_dist = jp.linalg.norm(T_left_right[:3, 3])
 
         ret = {
-            # "tracking_lin_vel": reward_tracking_lin_vel(
-            #     info["command"],
-            #     self.get_local_linvel(data),
-            #     self._config.reward_config.tracking_sigma,
-            # ),
-            "tracking_footsteps": reward_tracking_footsteps(
-                info["command"],
-                T_world_left,
-                T_world_right,
-                support_was_left,
-                support_changed,
-                self.PRM.feet_spacing,
-            ),
             "tracking_ang_vel": reward_tracking_ang_vel(
                 info["command"],
                 self.get_gyro(data),
@@ -787,6 +775,23 @@ class Joystick(sigmaban_base.SigmabanEnv):
             #     info["command"],
             # ),
         }
+
+        if USE_FOOTSTEP_REWARD:
+            ret["tracking_footsteps"] = reward_tracking_footsteps(
+                info["command"],
+                T_world_left,
+                T_world_right,
+                support_was_left,
+                support_changed,
+                self.PRM.feet_spacing,
+            )
+        else:
+            ret["tracking_lin_vel"] = reward_tracking_lin_vel(
+                info["command"],
+                self.get_local_linvel(data),
+                self._config.reward_config.tracking_sigma,
+            )
+        
 
         return ret
 
