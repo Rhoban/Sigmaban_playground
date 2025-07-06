@@ -93,6 +93,7 @@ class PolyReferenceMotion:
                 self.startend_double_support_ratio = data[name][
                     "startend_double_support_ratio"
                 ]
+                self.feet_spacing = data[name]["feet_spacing"]
                 self.start_offset = int(self.startend_double_support_ratio * self.fps)
                 self.nb_steps_in_period = int(self.period * self.fps)
 
