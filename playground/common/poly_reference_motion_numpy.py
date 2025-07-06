@@ -47,6 +47,7 @@ class PolyReferenceMotion:
                 self.feet_spacing = data[name]["feet_spacing"]
                 self.start_offset = int(self.startend_double_support_ratio * self.fps)
                 self.nb_steps_in_period = int(self.period * self.fps)
+                self.placo_parameters = data[name]["Placo"]
 
             if self.convert_to_speeds:
                 dx = self.steps_to_vel(dx)
@@ -79,11 +80,13 @@ class PolyReferenceMotion:
                 _data[dx][dy][dtheta] = data[name]
 
             _coeffs = data[name]["coefficients"]
+            left_target = data[name]["left_target"]
+            right_target = data[name]["right_target"]
 
             coeffs = []
             for k, v in _coeffs.items():
                 coeffs.append(v)
-            _data[dx][dy][dtheta] = coeffs
+            _data[dx][dy][dtheta] = (coeffs, left_target, right_target)
 
         self.dxs = sorted(self.dxs)
         self.dys = sorted(self.dys)
@@ -99,9 +102,17 @@ class PolyReferenceMotion:
             for y, dy in enumerate(self.dys):
                 self.data_array[x][y] = nb_dtheta * [None]
                 for th, dtheta in enumerate(self.dthetas):
-                    self.data_array[x][y][th] = _data[dx][dy][dtheta]
+                    self.data_array[x][y][th] = _data[dx][dy][dtheta][0]
 
-        self.data_array = self.data_array
+        self.feet_targets_data_array = nb_dx * [None]
+        for x, dx in enumerate(self.dxs):
+            self.feet_targets_data_array[x] = nb_dy * [None]
+            for y, dy in enumerate(self.dys):
+                self.feet_targets_data_array[x][y] = nb_dtheta * [None]
+                for th, dtheta in enumerate(self.dthetas):
+                    self.feet_targets_data_array[x][y][th] = 2 * [None]
+                    for foot_i in range(2):
+                        self.feet_targets_data_array[x][y][th][foot_i] = _data[dx][dy][dtheta][foot_i + 1]
 
         print("[Poly ref data] Done processing")
 
@@ -128,7 +139,11 @@ class PolyReferenceMotion:
         t = i % self.nb_steps_in_period / self.nb_steps_in_period
         t = np.clip(t, 0.0, 1.0)  # safeguard
         ret = self.sample_polynomial(t, self.data_array[ix][iy][itheta])
-        return ret
+        return (
+            ret,
+            self.feet_targets_data_array[ix][iy][itheta][0],
+            self.feet_targets_data_array[ix][iy][itheta][1],
+        )
 
 
 if __name__ == "__main__":

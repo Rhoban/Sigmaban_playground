@@ -11,7 +11,7 @@ import pickle
 
 # Import the reference motion class.
 from playground.sigmaban2024 import base
-from playground.common.poly_reference_motion import PolyReferenceMotion
+from playground.common.poly_reference_motion_numpy import PolyReferenceMotion
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 SCENE_PATH = f"{SCRIPT_PATH}/xmls"
