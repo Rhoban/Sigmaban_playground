@@ -1,10 +1,12 @@
 import jax
+import numpy as np
 import os
 import mujoco
 import mujoco.viewer
 import jax.numpy as jp
 from playground.sigmaban2024.joystick import Joystick
 from playground.sigmaban2024.constants import task_to_xml
+from playground.common.onnx_infer import OnnxInfer
 
 os.makedirs(".tmp", exist_ok=True)
 jax.config.update("jax_compilation_cache_dir", ".tmp/jax_cache")
@@ -30,6 +32,7 @@ viewer = mujoco.viewer.launch_passive(
     show_right_ui=False,
 )
 
+# policy = OnnxInfer("ONNX.onnx", awd=True)
 # Viewer only
 # while True:
 #     data.qpos[:]= model.keyframe("home").qpos
@@ -46,9 +49,14 @@ step_fn = jax.jit(env.step)
 
 print("Stepping...")
 while True:
-    state = step_fn(state, jp.zeros(20))
+    obs = np.array(state.obs['state'])
+    # action = policy.infer(obs)
+    action = np.zeros(20)
+
+    state = step_fn(state, jp.array(action))
 
     # print(state.data.qpos)
     data.qpos[:] = state.data.qpos
     mujoco.mj_forward(model, data)
     viewer.sync()
+    # input()
