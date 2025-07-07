@@ -329,6 +329,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
             "rng": rng,
             "step": 0,
             "command": cmd,
+            "target": jp.zeros(3),
             "last_act": jp.zeros(self.mjx_model.nu),
             "last_last_act": jp.zeros(self.mjx_model.nu),
             "last_last_last_act": jp.zeros(self.mjx_model.nu),
@@ -435,6 +436,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 state.info["command"][2],
                 state.info["imitation_i"],
             )
+            state.info["target"]= jp.where(state.info["support_is_left"], target_left, target_right)
         else:
             state.info["imitation_i"] = 0
             state.info["current_reference_motion"] = jp.zeros(0)
@@ -681,7 +683,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 noisy_gyro,  # 3
                 # noisy_accelerometer,  # 3
                 noisy_gravity,  # 3
-                info["command"],  # 3
+                info["target"],  # 3
                 noisy_joint_angles - home_offset,  # 20
                 noisy_joint_vel * self._config.dof_vel_scale,  # 20
                 info["last_act"],  # 20
