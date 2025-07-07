@@ -49,7 +49,7 @@ from playground.sigmaban2024.custom_rewards import reward_imitation, cost_feet_d
 USE_IMITATION_REWARD = True
 USE_MOTOR_SPEED_LIMITS = False
 MASK_HEAD_AND_ARMS = True
-USE_FOOTSTEP_REWARD = True
+USE_FOOTSTEP_REWARD = False
 
 
 def default_config() -> config_dict.ConfigDict:
