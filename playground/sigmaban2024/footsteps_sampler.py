@@ -138,7 +138,7 @@ class FootstepsSampler:
             else placo.HumanoidRobot_Side.right
         )
 
-        return self.humanoid_parameters.ellipsoid_overlap_clip(
+        return self.humanoid_parameters.box_overlap_clip(
             side, np.array(self.mjinfer.commands)
         )
 
