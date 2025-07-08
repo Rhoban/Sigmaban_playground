@@ -139,6 +139,28 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 convert_to_speeds=not USE_FOOTSTEP_REWARD,
             )
 
+            self.dx_range = jp.array(
+                [
+                    jp.min(jp.array(self.PRM.dxs)),
+                    jp.max(jp.array(self.PRM.dxs)),
+                ]
+            )
+            self.dy_range = jp.array(
+                [
+                    jp.min(jp.array(self.PRM.dys)),
+                    jp.max(jp.array(self.PRM.dys)),
+                ]
+            )
+
+            self.dtheta_range = jp.array(
+                [
+                    jp.min(jp.array(self.PRM.dthetas)),
+                    jp.max(jp.array(self.PRM.dthetas)),
+                ]
+            )
+
+        self.kind = "vel" if not USE_FOOTSTEP_REWARD else "footsteps"
+
         # Note: First joint is freejoint.
         # get the range of the joints
         self._lowers, self._uppers = self.mj_model.jnt_range[1:].T
@@ -429,11 +451,13 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 ]
             )
 
-            state.info["current_reference_motion"], target_left, target_right = self.PRM.get_reference_motion(
-                state.info["command"][0],
-                state.info["command"][1],
-                state.info["command"][2],
-                state.info["imitation_i"],
+            state.info["current_reference_motion"], target_left, target_right = (
+                self.PRM.get_reference_motion(
+                    state.info["command"][0],
+                    state.info["command"][1],
+                    state.info["command"][2],
+                    state.info["imitation_i"],
+                )
             )
         else:
             state.info["imitation_i"] = 0
@@ -536,7 +560,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
             support_was_left,
             support_changed,
             target_left,
-            target_right
+            target_right,
         )
         # FIXME
         rewards = {
@@ -806,20 +830,12 @@ class Joystick(sigmaban_base.SigmabanEnv):
         rng1, rng2, rng3, rng4 = jax.random.split(rng, 4)
 
         # Choosing a (dx, dy, dtheta) from reference data
-        dx = jax.random.uniform(
-            rng1,
-            minval=jp.min(jp.array(self.PRM.dxs)),
-            maxval=jp.max(jp.array(self.PRM.dxs)),
-        )
-        dy = jax.random.uniform(
-            rng2,
-            minval=jp.min(jp.array(self.PRM.dys)),
-            maxval=jp.max(jp.array(self.PRM.dys)),
-        )
+        dx = jax.random.uniform(rng1, minval=self.dx_range[0], maxval=self.dx_range[1])
+        dy = jax.random.uniform(rng2, minval=self.dy_range[0], maxval=self.dy_range[1])
         dtheta = jax.random.uniform(
             rng3,
-            minval=jp.min(jp.array(self.PRM.dthetas)),
-            maxval=jp.max(jp.array(self.PRM.dthetas)),
+            minval=self.dtheta_range[0],
+            maxval=self.dtheta_range[1],
         )
 
         # jax.debug.print("Sampling dx={}, dy={}, dtheta={}", dx, dy, dtheta)
