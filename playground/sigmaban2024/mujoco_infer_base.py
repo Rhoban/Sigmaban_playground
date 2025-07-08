@@ -12,7 +12,7 @@ class MJInferBase:
         print(model_path)
 
         self.sim_dt = 0.002
-        self.decimation = 10
+        self.decimation = 20
         self.model.opt.timestep = self.sim_dt
         self.data = mujoco.MjData(self.model)
         mujoco.mj_step(self.model, self.data)

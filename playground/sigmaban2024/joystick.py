@@ -54,7 +54,7 @@ USE_FOOTSTEP_REWARD = False
 
 def default_config() -> config_dict.ConfigDict:
     return config_dict.create(
-        ctrl_dt=0.02,
+        ctrl_dt=0.04,
         sim_dt=0.002,
         # episode_length=450,
         episode_length=1000,
