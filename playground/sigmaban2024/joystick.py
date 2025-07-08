@@ -86,7 +86,7 @@ def default_config() -> config_dict.ConfigDict:
             scales=config_dict.create(
                 tracking_lin_vel=2.5,
                 tracking_ang_vel=4.0,
-                tracking_footsteps=45.0,
+                tracking_footsteps=20.0,
                 # orientation=-0.5,
                 torques=-1.0e-2,
                 # action_rate=-0.375,  # was -1.5
@@ -560,7 +560,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
         #     state.info["command"],
         # )
         state.info["command"] = jp.where(
-            state.info["step"] > 250
+            (state.info["step"] > 250)
             * support_changed
             * jax.random.bernoulli(
                 cmd_rng, p=jp.clip((state.info["step"] - 250) / 250, 0, 1)
