@@ -16,10 +16,6 @@ from playground.common.poly_reference_motion_numpy import PolyReferenceMotion
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 SCENE_PATH = f"{SCRIPT_PATH}/xmls"
 
-COMMANDS_RANGE_X = [-0.3, 0.3]
-COMMANDS_RANGE_Y = [-0.3, 0.3]
-COMMANDS_RANGE_THETA = [-1.0, 1.0]  # [-1.0, 1.0]
-
 available_scenes = []
 if os.path.isdir(SCENE_PATH):
     for name in os.listdir(SCENE_PATH):
@@ -98,6 +94,10 @@ mujoco.mj_step(model, data)
 
 # Load the polynomial reference motion.
 PRM = PolyReferenceMotion(args.reference_data)
+
+COMMANDS_RANGE_X = [np.min(PRM.dxs), np.max(PRM.dxs)]
+COMMANDS_RANGE_Y = [np.min(PRM.dys), np.max(PRM.dys)]
+COMMANDS_RANGE_THETA = [np.min(PRM.dthetas), np.max(PRM.dthetas)]
 
 # Get the "home" keyframe to use as a default pose.
 home_frame = model.keyframe("home")
