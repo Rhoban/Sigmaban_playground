@@ -429,11 +429,13 @@ class Joystick(sigmaban_base.SigmabanEnv):
                 ]
             )
 
-            state.info["current_reference_motion"], target_left, target_right = self.PRM.get_reference_motion(
-                state.info["command"][0],
-                state.info["command"][1],
-                state.info["command"][2],
-                state.info["imitation_i"],
+            state.info["current_reference_motion"], target_left, target_right = (
+                self.PRM.get_reference_motion(
+                    state.info["command"][0],
+                    state.info["command"][1],
+                    state.info["command"][2],
+                    state.info["imitation_i"],
+                )
             )
         else:
             state.info["imitation_i"] = 0
@@ -536,7 +538,7 @@ class Joystick(sigmaban_base.SigmabanEnv):
             support_was_left,
             support_changed,
             target_left,
-            target_right
+            target_right,
         )
         # FIXME
         rewards = {
@@ -552,13 +554,23 @@ class Joystick(sigmaban_base.SigmabanEnv):
         state.info["last_act"] = action  # was
         # state.info["last_act"] = motor_targets  # became
         state.info["rng"], cmd_rng = jax.random.split(state.info["rng"])
+        # state.info["command"] = jp.where(
+        #     state.info["step"] > 500,
+        #     self.sample_command(cmd_rng),
+        #     state.info["command"],
+        # )
         state.info["command"] = jp.where(
-            state.info["step"] > 500,
+            state.info["step"] > 250
+            * support_changed
+            * jax.random.bernoulli(
+                cmd_rng, p=jp.clip((state.info["step"] - 250) / 250, 0, 1)
+            ),
             self.sample_command(cmd_rng),
             state.info["command"],
         )
+
         state.info["step"] = jp.where(
-            done | (state.info["step"] > 500),
+            done | (state.info["step"] > 750),
             0,
             state.info["step"],
         )
