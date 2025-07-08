@@ -44,11 +44,10 @@ Run the sampler:
 uv run playground/sigmaban2024/footsteps_sampler.py -o <path_to_onnx>
 ```
 
-This will generate `footsteps.json` 
+This will generate `footsteps.json`
 
 Run the mapper:
 
 ```bash
-uv run playground/sigmaban2024/mapper.py --plot
+uv run playground/sigmaban2024/footsteps_mapper.py --plot --model_path ONNX_with_metadata.onnx
 ```
-

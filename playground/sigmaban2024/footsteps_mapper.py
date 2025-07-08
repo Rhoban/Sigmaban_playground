@@ -194,13 +194,43 @@ if __name__ == "__main__":
         default="footsteps.json",
     )
     parser.add_argument("--plot", action="store_true", default=False)
+    parser.add_argument(
+        "-w", "--write_metadata_in_onnx", action="store_true", default=True
+    )
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        required=False,
+        help="Path to the ONNX model file.",
+        default=None,
+    )
     args = parser.parse_args()
+
+    if args.write_metadata_in_onnx:
+        assert args.model_path is not None, (
+            "If write_metadata_in_onnx is True, you must provide the path to the onnx model file in which to write"
+        )
 
     mapper = FootstepsMapper()
 
     samples = FootstepsSamples()
     samples.load(args.footsteps)
     mapper.fit(samples)
+    matrix = [float(x) for x in mapper.M.flatten()]
+    if args.write_metadata_in_onnx:
+        import onnx
+        model_onnx = onnx.load(args.model_path)
+        data_json = json.loads(model_onnx.metadata_props[0].value)
+        data_json["feet_spacing"] = mapper.feet_spacing
+        data_json["mapping_matrix"] = matrix
+        metadata = model_onnx.metadata_props[0]
+        metadata.key = "metadata"
+        metadata.value = json.dumps(data_json)
+
+
+        onnx.save(model_onnx, args.model_path)
+
+
 
     if args.plot:
         mapper.show_plot(samples)

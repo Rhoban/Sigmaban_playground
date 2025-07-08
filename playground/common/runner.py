@@ -87,7 +87,7 @@ class BaseRunner(ABC):
         if "eval/episode_reward" in metrics:
             print("-----------")
             print(
-                f'STEP: {num_steps} reward: {metrics["eval/episode_reward"]} reward_std: {metrics["eval/episode_reward_std"]}'
+                f"STEP: {num_steps} reward: {metrics['eval/episode_reward']} reward_std: {metrics['eval/episode_reward_std']}"
             )
             print("-----------")
 
@@ -102,11 +102,16 @@ class BaseRunner(ABC):
         orbax_checkpointer.save(path, params, force=True, save_args=save_args)
 
         onnx_export_path = f"{self.output_dir}/{d}_{current_step}.onnx"
+        onnx_export_path_with_metadata = f"{self.output_dir}/{d}_{current_step}_with_metadata.onnx"
         export_onnx(
             params,
             self.action_size,
             self.ppo_params,
             self.obs_size,  # may not work
+            [float(self.env.dx_range[0]), float(self.env.dx_range[1])],
+            [float(self.env.dy_range[0]), float(self.env.dy_range[1])],
+            [float(self.env.dtheta_range[0]), float(self.env.dtheta_range[1])],
+            self.env.kind,
             output_path=onnx_export_path,
         )
 
@@ -114,7 +119,7 @@ class BaseRunner(ABC):
         # Copy the latest ONNX model to the latest path
         if Path(latest_path).exists():
             Path(latest_path).unlink()
-        os.symlink(onnx_export_path, latest_path)
+        os.symlink(onnx_export_path_with_metadata, latest_path)
 
     def train(self) -> None:
         self.ppo_params = locomotion_params.brax_ppo_config(

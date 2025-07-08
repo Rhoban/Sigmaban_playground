@@ -1,11 +1,44 @@
-
 import tensorflow as tf
 from tensorflow.keras import layers
 import tf2onnx
 import numpy as np
+import onnx
+import json
+
+
+def add_metadata_to_onnx(model_path, kind, dx_range, dy_range, dtheta_range):
+    model_onnx = onnx.load(model_path)
+    metadata = model_onnx.metadata_props.add()
+    metadata.key = "metadata"
+    data = {
+        "kind": str(kind),
+        "feet_spacing": None,
+        "dx_range": list(dx_range),
+        "dy_range": list(dy_range),
+        "dtheta_range": list(dtheta_range),
+        "mapping_matrix": None,
+    }
+
+    data_json = json.dumps(data)
+    metadata.value = data_json
+
+    name = model_path.strip(".onnx")
+    name += "_with_metadata.onnx"
+
+    print(f"Saving ONNX model with metadata to {name}")
+    onnx.save(model_onnx, name)
+
 
 def export_onnx(
-    params, act_size, ppo_params, obs_size, output_path="ONNX.onnx"
+    params,
+    act_size,
+    ppo_params,
+    obs_size,
+    dx_range,
+    dy_range,
+    dtheta_range,
+    kind,
+    output_path="ONNX.onnx",
 ):
     print(" === EXPORT ONNX === ")
 
@@ -158,7 +191,9 @@ def export_onnx(
     elif isinstance(net_params, dict) and "params" in net_params:
         policy_tree = net_params["params"]
     else:
-        raise KeyError(f"Cannot locate policy params in {type(net_params)}; keys = {list(net_params.keys())}")
+        raise KeyError(
+            f"Cannot locate policy params in {type(net_params)}; keys = {list(net_params.keys())}"
+        )
 
     # policy_tree is now the dict of weight arrays
     transfer_weights(policy_tree, tf_policy_network)
@@ -167,9 +202,7 @@ def export_onnx(
     test_input = [np.ones((1, obs_size), dtype=np.float32)]
 
     # Define the TensorFlow input signature
-    spec = [
-        tf.TensorSpec(shape=(1, obs_size), dtype=tf.float32, name="obs")
-    ]
+    spec = [tf.TensorSpec(shape=(1, obs_size), dtype=tf.float32, name="obs")]
 
     tensorflow_pred = tf_policy_network(test_input)[0]
     # Build the model by calling it with example data
@@ -182,8 +215,26 @@ def export_onnx(
         tf_policy_network, input_signature=spec, opset=11, output_path=output_path
     )
 
+    # Add metadata to the ONNX model
+    add_metadata_to_onnx(
+        output_path,
+        kind=kind,
+        dx_range=dx_range,
+        dy_range=dy_range,
+        dtheta_range=dtheta_range,
+    )
+
     # For Antoine :)
     model_proto, _ = tf2onnx.convert.from_keras(
         tf_policy_network, input_signature=spec, opset=11, output_path="ONNX.onnx"
+    )
+
+    # Add metadata to the ONNX model
+    add_metadata_to_onnx(
+        "ONNX.onnx",
+        kind=kind,
+        dx_range=dx_range,
+        dy_range=dy_range,
+        dtheta_range=dtheta_range,
     )
     return
