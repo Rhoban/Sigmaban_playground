@@ -180,11 +180,11 @@ class FootstepsSampler:
 
         for _ in range(samples):
             dx, dy, dtheta = self.compute_footstep("right_foot", "left_foot")
-            self.samples.add("right", self.clipped_command().tolist(), [dx, dy, dtheta])
+            self.samples.add("right", self.mjinfer.commands, [dx, dy, dtheta])
             self.mjinfer.walk_one_step()
 
             dx, dy, dtheta = self.compute_footstep("left_foot", "right_foot")
-            self.samples.add("left", self.clipped_command().tolist(), [dx, dy, dtheta])
+            self.samples.add("left", self.mjinfer.commands, [dx, dy, dtheta])
             self.mjinfer.walk_one_step()
 
 
