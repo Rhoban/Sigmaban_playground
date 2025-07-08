@@ -84,6 +84,7 @@ class FootstepsSamples:
         feet_spacing = np.median(np.concatenate(
             (footsteps_right[:, 1], -footsteps_left[:, 1])
         ))
+        # feet_spacing = 0.125
 
         footsteps_right[:, 1] -= feet_spacing
         footsteps_left[:, 1] += feet_spacing
