@@ -15,6 +15,8 @@ def add_metadata_to_onnx(
         subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
     )
     now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    output_dir = str(output_dir).strip("/")
+    training_tag = output_dir.split("/")[-1]
 
     model_onnx = onnx.load(model_path)
     metadata = model_onnx.metadata_props.add()
@@ -27,7 +29,7 @@ def add_metadata_to_onnx(
         "dtheta_range": list(dtheta_range),
         "mapping_matrix": None,
         "current_step": int(current_step),
-        "training_tag": str(output_dir),
+        "training_tag": training_tag,
         "commit_hash": commit_hash,
         "datetime_of_generation": now,
     }
