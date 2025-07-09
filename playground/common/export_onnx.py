@@ -4,9 +4,18 @@ import tf2onnx
 import numpy as np
 import onnx
 import json
+import subprocess
+from datetime import datetime
 
 
-def add_metadata_to_onnx(model_path, kind, dx_range, dy_range, dtheta_range):
+def add_metadata_to_onnx(
+    model_path, kind, dx_range, dy_range, dtheta_range, current_step, output_dir
+):
+    commit_hash = (
+        subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
+    )
+    now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
     model_onnx = onnx.load(model_path)
     metadata = model_onnx.metadata_props.add()
     metadata.key = "metadata"
@@ -17,6 +26,10 @@ def add_metadata_to_onnx(model_path, kind, dx_range, dy_range, dtheta_range):
         "dy_range": list(dy_range),
         "dtheta_range": list(dtheta_range),
         "mapping_matrix": None,
+        "current_step": int(current_step),
+        "training_tag": str(output_dir),
+        "commit_hash": commit_hash,
+        "datetime_of_generation": now,
     }
 
     data_json = json.dumps(data)
@@ -38,6 +51,8 @@ def export_onnx(
     dy_range,
     dtheta_range,
     kind,
+    current_step,
+    output_dir,
     output_path="ONNX.onnx",
 ):
     print(" === EXPORT ONNX === ")
@@ -222,6 +237,8 @@ def export_onnx(
         dx_range=dx_range,
         dy_range=dy_range,
         dtheta_range=dtheta_range,
+        current_step=current_step,
+        output_dir=output_dir,
     )
 
     # For Antoine :)
@@ -236,5 +253,7 @@ def export_onnx(
         dx_range=dx_range,
         dy_range=dy_range,
         dtheta_range=dtheta_range,
+        current_step=current_step,
+        output_dir=output_dir,
     )
     return

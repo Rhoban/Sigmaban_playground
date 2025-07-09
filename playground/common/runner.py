@@ -112,6 +112,8 @@ class BaseRunner(ABC):
             [float(self.env.dy_range[0]), float(self.env.dy_range[1])],
             [float(self.env.dtheta_range[0]), float(self.env.dtheta_range[1])],
             self.env.kind,
+            current_step,
+            self.output_dir,
             output_path=onnx_export_path,
         )
 
