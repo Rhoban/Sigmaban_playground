@@ -74,7 +74,7 @@
             name="box"
             type="box"
             size="0.3 0.3 0.15"
-            pos="0.5 0 0"
+            pos="0.42 0 0"
             rgba="0.8 0.2 0.2 1"
             contype="1"
             conaffinity="0"

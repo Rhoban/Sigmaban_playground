@@ -9,7 +9,7 @@ def reward_imitation(
     joints_qvel: jax.Array,
     contacts: jax.Array,
     reference_frame: jax.Array,
-    cmd: jax.Array,
+    # cmd: jax.Array,
     use_imitation_reward: bool = False,
     mask_head_and_arms: bool = False,
 ) -> jax.Array:
@@ -17,7 +17,7 @@ def reward_imitation(
         return jp.nan_to_num(0.0)
 
     # TODO don't reward for moving when the command is zero.
-    cmd_norm = jp.linalg.norm(cmd[:3])
+    # cmd_norm = jp.linalg.norm(cmd[:3])
 
     w_torso_pos = 1.0
     w_torso_orientation = 1.0
@@ -170,11 +170,11 @@ def reward_imitation(
         + ang_vel_z_rew
         + joint_pos_rew
         + joint_vel_rew
-        + contact_rew
+        # + contact_rew
         # + torso_orientation_rew
     )
 
-    reward *= cmd_norm > 0.01  # No reward for zero commands.
+    # reward *= cmd_norm > 0.01  # No reward for zero commands.
     return jp.nan_to_num(reward)
 
 

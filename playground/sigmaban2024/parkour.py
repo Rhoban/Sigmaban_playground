@@ -30,17 +30,19 @@ from . import constants
 from . import base as sigmaban_base
 
 # from playground.common.utils import LowPassActionFilter
-from playground.common.poly_reference_motion import PolyReferenceMotion
+# from playground.common.poly_reference_motion import PolyReferenceMotion
+from playground.common.episodic_reference_motion import EpisodicReferenceMotion
 from playground.common.rewards import (
     cost_torques,
     cost_action_rate,
     reward_alive,
 )
-from playground.sigmaban2024.custom_rewards import cost_feet_dist, cost_parkour_up
+from playground.sigmaban2024.custom_rewards import cost_feet_dist, cost_parkour_up, reward_imitation
 
 # if set to false, won't require the reference data to be present and won't compute the reference motions polynoms for nothing
 USE_MOTOR_SPEED_LIMITS = False
-MASK_HEAD_AND_ARMS = False
+MASK_HEAD_AND_ARMS = True
+USE_IMITATION_REWARD = True
 
 
 def default_config() -> config_dict.ConfigDict:
@@ -80,6 +82,7 @@ def default_config() -> config_dict.ConfigDict:
                 stand_still=0.0,  # was -0.3
                 alive=20.0,
                 parkour_up=-10.0,
+                imitation=1.0
                 # feet_dist=-2.0,
             ),
             tracking_sigma=0.01,  # was working at 0.01
@@ -117,6 +120,12 @@ class Parkour(sigmaban_base.SigmabanEnv):
         self._default_actuator = self._mj_model.keyframe(
             "home"
         ).ctrl  # ctrl of all the actual joints (no floating base and no backlash)
+
+
+        if USE_IMITATION_REWARD:
+            self.PRM = EpisodicReferenceMotion(
+                "playground/sigmaban2024/data/parkour.json",
+            )
 
         self.kind = "parkour"
 
@@ -241,25 +250,25 @@ class Parkour(sigmaban_base.SigmabanEnv):
 
         # init position/orientation in environment
         # x=+U(-0.05, 0.05), y=+U(-0.05, 0.05), yaw=U(-3.14, 3.14).
-        rng, key = jax.random.split(rng)
-        dxy = jax.random.uniform(key, (2,), minval=-0.05, maxval=0.05)
+        # rng, key = jax.random.split(rng)
+        # dxy = jax.random.uniform(key, (2,), minval=-0.05, maxval=0.05)
 
-        # floating base
+        # # floating base
         base_qpos = self.get_floating_base_qpos(qpos)
-        base_qpos = base_qpos.at[0:2].set(
-            qpos[self._floating_base_qpos_addr : self._floating_base_qpos_addr + 2]
-            + dxy
-        )  # x y noise
+        # base_qpos = base_qpos.at[0:2].set(
+        #     qpos[self._floating_base_qpos_addr : self._floating_base_qpos_addr + 2]
+        #     + dxy
+        # )  # x y noise
 
-        rng, key = jax.random.split(rng)
-        yaw = jax.random.uniform(key, (1,), minval=-3.14, maxval=3.14)
-        quat = math.axis_angle_to_quat(jp.array([0, 0, 1]), yaw)
-        new_quat = math.quat_mul(
-            qpos[self._floating_base_qpos_addr + 3 : self._floating_base_qpos_addr + 7],
-            quat,
-        )  # yaw noise
+        # rng, key = jax.random.split(rng)
+        # yaw = jax.random.uniform(key, (1,), minval=-3.14, maxval=3.14)
+        # quat = math.axis_angle_to_quat(jp.array([0, 0, 1]), yaw)
+        # new_quat = math.quat_mul(
+        #     qpos[self._floating_base_qpos_addr + 3 : self._floating_base_qpos_addr + 7],
+        #     quat,
+        # )  # yaw noise
 
-        base_qpos = base_qpos.at[3:7].set(new_quat)
+        # base_qpos = base_qpos.at[3:7].set(new_quat)
 
         qpos = self.set_floating_base_qpos(base_qpos, qpos)
         # print(f'DEBUG1 base qpos: {qpos}')
@@ -271,7 +280,6 @@ class Parkour(sigmaban_base.SigmabanEnv):
         qpos_j = self.get_actuator_joints_qpos(qpos) + jax.random.uniform(
             key, (self._actuators,), minval=0.1, maxval=0.1
         )
-        qpos = self.set_actuator_joints_qpos(qpos_j, qpos)
         # print(f'DEBUG2 joint qpos: {qpos}')
         # init joint vel
         # d(xyzrpy)=U(-0.05, 0.05)
@@ -280,9 +288,10 @@ class Parkour(sigmaban_base.SigmabanEnv):
         #     jax.random.uniform(key, (6,), minval=-0.5, maxval=0.5)
         # )
 
-        qvel = self.set_floating_base_qvel(
-            jax.random.uniform(key, (6,), minval=-0.05, maxval=0.05), qvel
-        )
+        # qvel = self.set_floating_base_qvel(
+        #     jax.random.uniform(key, (6,), minval=-0.05, maxval=0.05), qvel
+        # )
+        # qvel = self.get_floating_base_qvel(jp.zeros(6))
         # print(f'DEBUG3 base qvel: {qvel}')
         ctrl = self.get_actuator_joints_qpos(qpos)
         # print(f'DEBUG4 ctrl: {ctrl}')
@@ -297,6 +306,12 @@ class Parkour(sigmaban_base.SigmabanEnv):
             maxval=self._config.push_config.interval_range[1],
         )
         push_interval_steps = jp.round(push_interval / self.dt).astype(jp.int32)
+
+
+        if USE_IMITATION_REWARD:
+            current_reference_motion = self.PRM.get_frame(0)
+        else:
+            current_reference_motion = jp.zeros(0)
 
         info = {
             "rng": rng,
@@ -317,6 +332,8 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 self._config.noise_config.action_max_delay * self._actuators
             ),
             "imu_history": jp.zeros(self._config.noise_config.imu_max_delay * 3),
+            "imitation_i": 0,
+            "current_reference_motion": current_reference_motion,
         }
 
         metrics = {}
@@ -369,6 +386,21 @@ class Parkour(sigmaban_base.SigmabanEnv):
         return T_world_foot
 
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
+        if USE_IMITATION_REWARD:
+            state.info["imitation_i"] += 1
+            state.info["imitation_i"] = (
+                state.info["imitation_i"] % self.PRM.nb_steps
+            )  # not critical, is already moduloed in get_reference_motion
+
+            state.info["current_reference_motion"]= (
+                self.PRM.get_frame(
+                    state.info["imitation_i"],
+                )
+            )
+        else:
+            state.info["imitation_i"] = 0
+            state.info["current_reference_motion"] = jp.zeros(0)
+
         state.info["rng"], push1_rng, push2_rng, action_delay_rng = jax.random.split(
             state.info["rng"], 4
         )
@@ -604,6 +636,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 info["last_last_last_act"],  # 20
                 _motor_targets,
                 contact,  # 2
+                info["imitation_i"],
             ]
         )
 
@@ -627,6 +660,8 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 contact,  # 2
                 feet_vel,  # 4*3
                 info["feet_air_time"],  # 2
+                info["current_reference_motion"],
+                info["imitation_i"],
             ]
         )
 
@@ -660,6 +695,16 @@ class Parkour(sigmaban_base.SigmabanEnv):
             "alive": reward_alive(),
             "parkour_up": cost_parkour_up(
                 data.xpos[self._torso_body_id], data.xquat[self._torso_body_id]
+            ),
+            "imitation": reward_imitation(  # FIXME, this reward is so adhoc...
+                self.get_floating_base_qpos(data.qpos),  # floating base qpos
+                self.get_floating_base_qvel(data.qvel),  # floating base qvel
+                self.get_actuator_joints_qpos(data.qpos),
+                self.get_actuator_joints_qvel(data.qvel),
+                contact,
+                info["current_reference_motion"],
+                USE_IMITATION_REWARD,
+                MASK_HEAD_AND_ARMS,
             ),
             # "feet_dist": cost_feet_dist(feet_dist),
         }
