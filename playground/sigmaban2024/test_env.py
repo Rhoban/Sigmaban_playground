@@ -5,6 +5,7 @@ import mujoco
 import mujoco.viewer
 import jax.numpy as jp
 from playground.sigmaban2024.joystick import Joystick
+from playground.sigmaban2024.push_recovery import PushRecovery
 from playground.sigmaban2024.constants import task_to_xml
 from playground.common.onnx_infer import OnnxInfer
 
@@ -42,6 +43,7 @@ viewer = mujoco.viewer.launch_passive(
 # exit()
 
 env = Joystick(task=task)
+env = PushRecovery(task=task)
 print("Resetting...")
 state = env.reset(key)
 
