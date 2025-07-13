@@ -81,7 +81,7 @@ def default_config() -> config_dict.ConfigDict:
                 action_rate=-0.75,  # was -0.3
                 stand_still=0.0,  # was -0.3
                 alive=20.0,
-                parkour_up=-10.0,
+                parkour_up=-1.0,
                 imitation=1.0
                 # feet_dist=-2.0,
             ),
