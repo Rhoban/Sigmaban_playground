@@ -4,15 +4,15 @@ import argparse
 
 from playground.common import randomize
 from playground.common.runner import BaseRunner
-from playground.sigmaban2024 import joystick
+from playground.sigmaban2024 import joystick, push_recovery
 
 
 class SigmabanRunner(BaseRunner):
-
     def __init__(self, args):
         super().__init__(args)
         available_envs = {
             "joystick": (joystick, joystick.Joystick),
+            "push_recovery": (push_recovery, push_recovery.PushRecovery),
         }
         if args.env not in available_envs:
             raise ValueError(f"Unknown env {args.env}")
@@ -49,9 +49,7 @@ def main() -> None:
         default=None,
         help="Path to restore checkpoint from",
     )
-    parser.add_argument(
-        "--wandb", action="store_true", help="Publish run to wandb"
-    )
+    parser.add_argument("--wandb", action="store_true", help="Publish run to wandb")
     # parser.add_argument(
     #     "--debug", action="store_true", help="Run in debug mode with minimal parameters"
     # )

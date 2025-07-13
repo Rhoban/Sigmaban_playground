@@ -175,38 +175,38 @@ with mujoco.viewer.launch_passive(
         new_qpos[:7] = default_qpos[:7].copy()
         if counter % 10 == 0:
             new_qpos = default_qpos.copy()
-            if not all(val == 0.0 for val in command):
-                imitation_i = step % PRM.nb_steps_in_period
+            # if not all(val == 0.0 for val in command):
+            imitation_i = step % PRM.nb_steps_in_period
 
-                ref_motion, _, _ = PRM.get_reference_motion(
-                    command[0], command[1], command[2], imitation_i
-                )
-                ref_motion = np.array(ref_motion)
+            ref_motion, _, _ = PRM.get_reference_motion(
+                command[0], command[1], command[2], imitation_i
+            )
+            ref_motion = np.array(ref_motion)
 
-                if ref_motion.shape[0] == 48:
-                    joints_pos = ref_motion[0:20]
-                    ref_joint_pos = joints_pos
-                    # ref_joint_pos = np.concatenate([joints_pos[:9], joints_pos[11:]])
-                else:
-                    print(
-                        "Error: Unexpected reference motion dimension:",
-                        ref_motion.shape,
-                    )
-                    sys.exit(1)
-                # print(ref_joint_pos)
-                # print(len(ref_joint_pos))
-                # print(ref_joint_pos.shape)
-                # exit()
-                new_qpos = default_qpos.copy()
-                if new_qpos[7 : 7 + 20].shape[0] == ref_joint_pos.shape[0]:
-                    new_qpos[7 : 7 + 20] = ref_joint_pos
-                else:
-                    print(
-                        "Error: Actuated joint dimension mismatch. Using default pose."
-                    )
-                step += 1
+            if ref_motion.shape[0] == 48:
+                joints_pos = ref_motion[0:20]
+                ref_joint_pos = joints_pos
+                # ref_joint_pos = np.concatenate([joints_pos[:9], joints_pos[11:]])
             else:
-                step = 0
+                print(
+                    "Error: Unexpected reference motion dimension:",
+                    ref_motion.shape,
+                )
+                sys.exit(1)
+            # print(ref_joint_pos)
+            # print(len(ref_joint_pos))
+            # print(ref_joint_pos.shape)
+            # exit()
+            new_qpos = default_qpos.copy()
+            if new_qpos[7 : 7 + 20].shape[0] == ref_joint_pos.shape[0]:
+                new_qpos[7 : 7 + 20] = ref_joint_pos
+            else:
+                print(
+                    "Error: Actuated joint dimension mismatch. Using default pose."
+                )
+            step += 1
+            # else:
+            #     step = 0
         data.qpos[:] = new_qpos
 
         # Step the simulation to update any dependent quantities.
