@@ -388,9 +388,9 @@ class Parkour(sigmaban_base.SigmabanEnv):
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
         if USE_IMITATION_REWARD:
             state.info["imitation_i"] += 1
-            state.info["imitation_i"] = (
-                state.info["imitation_i"] % self.PRM.nb_steps
-            )  # not critical, is already moduloed in get_reference_motion
+            # state.info["imitation_i"] = (
+            #     state.info["imitation_i"] % self.PRM.nb_steps
+            # )  # not critical, is already moduloed in get_reference_motion
 
             state.info["current_reference_motion"]= (
                 self.PRM.get_frame(
