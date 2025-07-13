@@ -12,7 +12,7 @@ from playground.common.utils import LowPassActionFilter
 from playground.sigmaban2024.mujoco_infer_base import MJInferBase
 
 USE_MOTOR_SPEED_LIMITS = False
-MASK_HEAD_AND_ARMS = True
+MASK_HEAD_AND_ARMS = False
 USE_FOOTSTEP_REWARD = False
 
 
@@ -181,7 +181,6 @@ class MjInfer(MJInferBase):
                 gyro,
                 # accelerometer,
                 gravity,
-                command,
                 joint_angles - home_offset,
                 joint_vel * self.dof_vel_scale,
                 self.last_action,
@@ -193,7 +192,6 @@ class MjInfer(MJInferBase):
                     else self.motor_targets[8:]
                 ),
                 contacts,
-                self.imitation_phase,
             ]
         )
 
@@ -268,12 +266,6 @@ class MjInfer(MJInferBase):
         step_start = time.time()
 
         mujoco.mj_step(self.model, self.data)
-
-        torso_body_id = self.model.body("torso_2023").id
-        torso_xpos = self.data.xpos[torso_body_id]
-        torso_quat = self.data.xquat[torso_body_id]
-        print("Torso xpos", torso_xpos)
-        print("Torso quat", torso_quat)
 
         # TODO: Move this somewhere else (calibrating neutral feet spacing)
         # T_left_right = np.linalg.inv(
