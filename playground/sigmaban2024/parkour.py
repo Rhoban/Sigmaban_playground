@@ -388,9 +388,9 @@ class Parkour(sigmaban_base.SigmabanEnv):
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
         if USE_IMITATION_REWARD:
             state.info["imitation_i"] += 1
-            # state.info["imitation_i"] = (
-            #     state.info["imitation_i"] % self.PRM.nb_steps
-            # )  # not critical, is already moduloed in get_reference_motion
+            state.info["imitation_i"] = (
+                state.info["imitation_i"] % self.PRM.nb_steps
+            )  # not critical, is already moduloed in get_reference_motion
 
             state.info["current_reference_motion"]= (
                 self.PRM.get_frame(
@@ -528,7 +528,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
 
     def _get_termination(self, data: mjx.Data, info:dict[str, Any]) -> jax.Array:
         fall_termination = self.get_gravity(data)[-1] < 0.0
-        episode_end_termination = info["imitation_i"] >= self.PRM.nb_steps
+        episode_end_termination = info["imitation_i"] >= self.PRM.nb_steps-1
         return episode_end_termination | fall_termination | jp.isnan(data.qpos).any() | jp.isnan(data.qvel).any()
 
     def _get_obs(
