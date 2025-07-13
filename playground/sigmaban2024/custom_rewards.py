@@ -13,7 +13,6 @@ def reward_imitation(
     use_imitation_reward: bool = False,
     mask_head_and_arms: bool = False,
 ) -> jax.Array:
-
     if not use_imitation_reward:
         return jp.nan_to_num(0.0)
 
@@ -185,3 +184,12 @@ def cost_feet_rectangle_contact(feet_rectangle_contact: jax.Array):
 
 def cost_feet_dist(feet_dist):
     return jp.nan_to_num(feet_dist < 0.1)
+
+
+def cost_parkour_up(torso_xpos: jax.Array, torso_xquat: jax.Array):
+    target_xpos = jp.array([0.40, 0.0, 0.5])
+    target_xquat = jp.array([1.0, 0.0, 0.0, 0.0])
+
+    xpos_error = jp.sum(jp.square(torso_xpos - target_xpos))
+
+    return jp.nan_to_num(-jp.sum(xpos_error))

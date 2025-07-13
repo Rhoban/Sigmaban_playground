@@ -4,7 +4,7 @@ import argparse
 
 from playground.common import randomize
 from playground.common.runner import BaseRunner
-from playground.sigmaban2024 import joystick
+from playground.sigmaban2024 import joystick, parkour
 
 
 class SigmabanRunner(BaseRunner):
@@ -13,6 +13,7 @@ class SigmabanRunner(BaseRunner):
         super().__init__(args)
         available_envs = {
             "joystick": (joystick, joystick.Joystick),
+            "parkour": (parkour, parkour.Parkour),
         }
         if args.env not in available_envs:
             raise ValueError(f"Unknown env {args.env}")

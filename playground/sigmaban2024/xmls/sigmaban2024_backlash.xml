@@ -88,6 +88,7 @@
 
     <worldbody>
         <body name="torso_2023" pos="0 0 0.4">
+        <!-- <body name="torso_2023" pos="0.35 0 0.55"> -->
             <freejoint name="root"/>
             <site name="torso"/>
             <inertial pos="0.00156484 6.73262e-05 0.070745" quat="0.99676 -0.0200847 -0.0149022 0.0764468"

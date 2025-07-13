@@ -269,6 +269,12 @@ class MjInfer(MJInferBase):
 
         mujoco.mj_step(self.model, self.data)
 
+        torso_body_id = self.model.body("torso_2023").id
+        torso_xpos = self.data.xpos[torso_body_id]
+        torso_quat = self.data.xquat[torso_body_id]
+        print("Torso xpos", torso_xpos)
+        print("Torso quat", torso_quat)
+
         # TODO: Move this somewhere else (calibrating neutral feet spacing)
         # T_left_right = np.linalg.inv(
         #     self.get_T_world_site("left_foot")
