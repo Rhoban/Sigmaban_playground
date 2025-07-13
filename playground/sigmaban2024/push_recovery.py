@@ -32,6 +32,8 @@ from . import base as sigmaban_base
 # from playground.common.utils import LowPassActionFilter
 from playground.common.poly_reference_motion import PolyReferenceMotion
 from playground.common.rewards import (
+    reward_tracking_lin_vel,
+    reward_tracking_ang_vel,
     reward_tracking_footsteps,
     cost_torques,
     cost_action_rate,
@@ -78,6 +80,8 @@ def default_config() -> config_dict.ConfigDict:
         ),
         reward_config=config_dict.create(
             scales=config_dict.create(
+                tracking_lin_vel=2.5,
+                tracking_ang_vel=4.0,
                 tracking_footsteps=45.0,
                 torques=-1.0e-2,
                 action_rate=-0.75,  # was -0.3
@@ -90,7 +94,7 @@ def default_config() -> config_dict.ConfigDict:
         push_config=config_dict.create(
             enable=True,
             interval_range=[3.0, 7.0],
-            magnitude_range=[0.8, 1.5],  # was [0.3, 1.0]
+            magnitude_range=[0.8, 2.0],  # was [0.3, 1.0]
         ),
         # UNUSED
         lin_vel_x=[-0.2, 0.3],
@@ -778,6 +782,17 @@ class PushRecovery(sigmaban_base.SigmabanEnv):
                 self.PRM.feet_spacing,
                 target_left,
                 target_right,
+            )
+        else:
+            ret["tracking_lin_vel"] = reward_tracking_lin_vel(
+                info["command"],
+                self.get_local_linvel(data),
+                self._config.reward_config.tracking_sigma,
+            )
+            ret["tracking_ang_vel"] = reward_tracking_ang_vel(
+                info["command"],
+                self.get_gyro(data),
+                self._config.reward_config.tracking_sigma,
             )
 
         return ret
