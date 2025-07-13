@@ -70,7 +70,6 @@
                 condim="3"
             />
         </body>
-
         <geom
             name="box"
             type="box"
@@ -80,6 +79,7 @@
             contype="1"
             conaffinity="0"
         />
+
     </worldbody>
 
     <keyframe>

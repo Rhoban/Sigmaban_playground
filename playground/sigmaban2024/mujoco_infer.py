@@ -221,7 +221,8 @@ class MjInfer(MJInferBase):
             self.data.qvel[:2] = [1.0, 0]
             # self.phase_frequency_factor += 0.1
         if keycode == 59:  # m
-            self.phase_frequency_factor -= 0.1
+            self.data.qvel[:2] = [-1.0, 0]
+            # self.phase_frequency_factor -= 0.1
             # self.random_head_and_arm_position = (np.random.random(8)-0.5)*2
         if keycode == 82:  # r
             self.reset()

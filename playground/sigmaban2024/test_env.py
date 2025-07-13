@@ -19,7 +19,7 @@ jax.config.update(
 os.environ["JAX_COMPILATION_CACHE_DIR"] = ".tmp/jax_cache"
 
 key = jax.random.key(1)
-task = "flat_terrain_backlash"
+task = "flat_terrain_backlash_parkour"
 scene = task_to_xml(task)
 
 model = mujoco.MjModel.from_xml_path(str(scene))

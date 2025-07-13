@@ -229,26 +229,26 @@
 
                                     <body name="left_foot_cleat_back_left">
                                         <site name="left_foot_cleat_back_left" quat="0.5 -0.5 -0.5 -0.5"/>
-                                        <geom class="cleat" size="0.008 0.008" pos="0.0435 -0.0535 -0.03213"
-                                            quat="0.707107 0.707107 0 0" type="cylinder" name="left_foot_cleat_back_left"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="0.0435 -0.0535 -0.03213"
+                                            quat="0.707107 0.707107 0 0" type="box" name="left_foot_cleat_back_left"/>
                                     </body>
 
                                     <body name="left_foot_cleat_back_right">
                                         <site name="left_foot_cleat_back_right" quat="0.5 -0.5 -0.5 -0.5"/>
-                                        <geom class="cleat" size="0.008 0.008" pos="-0.0325 -0.0535 -0.03213"
-                                            quat="0.707107 0.707107 0 0" type="cylinder" name="left_foot_cleat_back_right"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="-0.0325 -0.0535 -0.03213"
+                                            quat="0.707107 0.707107 0 0" type="box" name="left_foot_cleat_back_right"/>
                                     </body>
 
                                     <body name="left_foot_cleat_front_left">
                                         <site name="left_foot_cleat_front_left" quat="0.5 -0.5 -0.5 -0.5"/>
-                                        <geom class="cleat" size="0.008 0.008" pos="0.0435 -0.0535 0.10947"
-                                            quat="0 0 -0.707107 0.707107" type="cylinder" name="left_foot_cleat_front_left"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="0.0435 -0.0535 0.10947"
+                                            quat="0 0 -0.707107 0.707107" type="box" name="left_foot_cleat_front_left"/>
                                     </body>
 
                                     <body name="left_foot_cleat_front_right">
                                         <site name="left_foot_cleat_front_right" quat="0.5 -0.5 -0.5 -0.5"/>
-                                        <geom class="cleat" size="0.008 0.008" pos="-0.0325 -0.0535 0.10947"
-                                            quat="0 0 -0.707107 0.707107" type="cylinder" name="left_foot_cleat_front_right"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="-0.0325 -0.0535 0.10947"
+                                            quat="0 0 -0.707107 0.707107" type="box" name="left_foot_cleat_front_right"/>
                                     </body>
 
                                     <site name="left_foot" pos="0.003 -0.0615 0.03617" quat="0.5 -0.5 -0.5 -0.5"/>
@@ -326,24 +326,24 @@
 
                                     <body name="right_foot_cleat_back_right">
                                         <site name="right_foot_cleat_back_right" quat="0.5 -0.5 -0.5 -0.5"/>
-                                        <geom class="cleat" size="0.008 0.008" pos="-0.0435 -0.0535 -0.03213"
-                                            quat="0.707107 0.707107 0 0" type="cylinder" name="right_foot_cleat_back_right"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="-0.0435 -0.0535 -0.03213"
+                                            quat="0.707107 0.707107 0 0" type="box" name="right_foot_cleat_back_right"/>
                                     </body>
                                     <body name="right_foot_cleat_back_left">
                                         <site name="right_foot_cleat_back_left" quat="0.5 -0.5 -0.5 -0.5"/>
-                                        <geom class="cleat" size="0.008 0.008" pos="0.0325 -0.0535 -0.03213"
-                                            quat="0.707107 0.707107 0 0" type="cylinder" name="right_foot_cleat_back_left"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="0.0325 -0.0535 -0.03213"
+                                            quat="0.707107 0.707107 0 0" type="box" name="right_foot_cleat_back_left"/>
                                     </body>
                                     <body name="right_foot_cleat_front_right">
                                         <site name="right_foot_cleat_front_right" quat="0.5 -0.5 -0.5 -0.5"/>
-                                        <geom class="cleat" size="0.008 0.008" pos="-0.0435 -0.0535 0.10947"
-                                            quat="0 0 -0.707107 0.707107" type="cylinder" name="right_foot_cleat_front_right"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="-0.0435 -0.0535 0.10947"
+                                            quat="0 0 -0.707107 0.707107" type="box" name="right_foot_cleat_front_right"/>
                                     </body>
                                     <body name="right_foot_cleat_front_left">
                                         <site name="right_foot_cleat_front_left" quat="0.5 -0.5 -0.5 -0.5"/>
 
-                                        <geom class="cleat" size="0.008 0.008" pos="0.0325 -0.0535 0.10947"
-                                            quat="0 0 -0.707107 0.707107" type="cylinder" name="right_foot_cleat_front_left"/>
+                                        <geom class="cleat" size="0.008 0.008 0.008" pos="0.0325 -0.0535 0.10947"
+                                            quat="0 0 -0.707107 0.707107" type="box" name="right_foot_cleat_front_left"/>
                                     </body>
 
                                     <site name="right_foot" pos="-0.003 -0.0615 0.03617" quat="0.5 -0.5 -0.5 -0.5"/>
