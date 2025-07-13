@@ -6,14 +6,13 @@ import mujoco.viewer
 import time
 import argparse
 from playground.common.onnx_infer import OnnxInfer
-from playground.common.poly_reference_motion_numpy import PolyReferenceMotion
+from playground.common.episodic_reference_motion_numpy import EpisodicReferenceMotion
 from playground.common.utils import LowPassActionFilter
 
 from playground.sigmaban2024.mujoco_infer_base import MJInferBase
 
 USE_MOTOR_SPEED_LIMITS = False
-MASK_HEAD_AND_ARMS = False
-USE_FOOTSTEP_REWARD = False
+MASK_HEAD_AND_ARMS = True
 
 
 class MjInfer(MJInferBase):
@@ -35,15 +34,15 @@ class MjInfer(MJInferBase):
 
         self.action_filter = LowPassActionFilter(50, cutoff_frequency=37.5)
 
-        self.PRM = PolyReferenceMotion(
-            reference_data, convert_to_speeds=not USE_FOOTSTEP_REWARD
+        self.PRM = EpisodicReferenceMotion(
+            "playground/sigmaban2024/data/parkour.json",
         )
 
         self.policy = OnnxInfer(onnx_model_path, awd=True)
 
-        self.COMMANDS_RANGE_X = [np.min(self.PRM.dxs), np.max(self.PRM.dxs)]
-        self.COMMANDS_RANGE_Y = [np.min(self.PRM.dys), np.max(self.PRM.dys)]
-        self.COMMANDS_RANGE_THETA = [np.min(self.PRM.dthetas), np.max(self.PRM.dthetas)]
+        # self.COMMANDS_RANGE_X = [np.min(self.PRM.dxs), np.max(self.PRM.dxs)]
+        # self.COMMANDS_RANGE_Y = [np.min(self.PRM.dys), np.max(self.PRM.dys)]
+        # self.COMMANDS_RANGE_THETA = [np.min(self.PRM.dthetas), np.max(self.PRM.dthetas)]
 
         self.last_action = np.zeros(self.num_dofs)
         self.last_last_action = np.zeros(self.num_dofs)
@@ -192,6 +191,7 @@ class MjInfer(MJInferBase):
                     else self.motor_targets[8:]
                 ),
                 contacts,
+                [self.imitation_i]
             ]
         )
 
@@ -199,35 +199,8 @@ class MjInfer(MJInferBase):
 
     def key_callback(self, keycode):
         print(f"key: {keycode}")
-        lin_vel_x = 0
-        lin_vel_y = 0
-        ang_vel = 0
-        self.random_head_and_arm_position = (np.random.random(8) - 0.5) * 2
-        if keycode == 265:  # arrow up
-            lin_vel_x = self.COMMANDS_RANGE_X[1]
-        if keycode == 264:  # arrow down
-            lin_vel_x = self.COMMANDS_RANGE_X[0]
-        if keycode == 263:  # arrow left
-            lin_vel_y = self.COMMANDS_RANGE_Y[1]
-        if keycode == 262:  # arrow right
-            lin_vel_y = self.COMMANDS_RANGE_Y[0]
-        if keycode == 81:  # a
-            ang_vel = self.COMMANDS_RANGE_THETA[1]
-        if keycode == 69:  # e
-            ang_vel = self.COMMANDS_RANGE_THETA[0]
-        if keycode == 80:  # p
-            self.data.qvel[:2] = [1.0, 0]
-            # self.phase_frequency_factor += 0.1
-        if keycode == 59:  # m
-            self.data.qvel[:2] = [-1.0, 0]
-            # self.phase_frequency_factor -= 0.1
-            # self.random_head_and_arm_position = (np.random.random(8)-0.5)*2
         if keycode == 82:  # r
             self.reset()
-
-        self.commands[0] = lin_vel_x
-        self.commands[1] = lin_vel_y
-        self.commands[2] = ang_vel
 
     def get_T_world_site(self, site_name: str) -> np.ndarray:
         """
@@ -260,8 +233,6 @@ class MjInfer(MJInferBase):
         self.data.ctrl[:] = self.default_actuator
         self.random_head_and_arm_position = (np.random.random(8) - 0.5) * 2
 
-        self.support = "left"
-
     def step(self):
         step_start = time.time()
 
@@ -277,27 +248,10 @@ class MjInfer(MJInferBase):
         self.t += self.model.opt.timestep
 
         if self.counter % self.decimation == 0:
-            # if np.linalg.norm(self.commands) > 0.0:
             self.imitation_i += 1.0 * self.phase_frequency_factor
 
-            self.support = (
-                "left"
-                if self.imitation_i < self.PRM.nb_steps_in_period / 2
-                else "right"
-            )
+            self.imitation_i = self.imitation_i % self.PRM.nb_steps
 
-            self.imitation_i = self.imitation_i % self.PRM.nb_steps_in_period
-
-            # else:
-            #     self.imitation_i = 0.0
-            # print(self.PRM.nb_steps_in_period)
-            # exit()
-            self.imitation_phase = np.array(
-                [
-                    np.cos(self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi),
-                    np.sin(self.imitation_i / self.PRM.nb_steps_in_period * 2 * np.pi),
-                ]
-            )
             obs = self.get_obs(
                 self.data,
                 self.commands,
@@ -329,6 +283,7 @@ class MjInfer(MJInferBase):
             # head_targets = self.commands[3:]
             if MASK_HEAD_AND_ARMS:
                 self.motor_targets[:8] = self.random_head_and_arm_position
+                self.motor_targets[:8] = np.zeros(8)
             self.data.ctrl = self.motor_targets.copy()
             # self.data.ctrl = np.zeros(20)
 
