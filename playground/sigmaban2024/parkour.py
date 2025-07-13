@@ -485,7 +485,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
         state.info["swing_peak"] = jp.maximum(state.info["swing_peak"], p_fz)
 
         obs = self._get_obs(data, state.info, contact)
-        done = self._get_termination(data)
+        done = self._get_termination(data, state.info)
 
         rewards = self._get_reward(
             data,
@@ -526,9 +526,10 @@ class Parkour(sigmaban_base.SigmabanEnv):
         state = state.replace(data=data, obs=obs, reward=reward, done=done)
         return state
 
-    def _get_termination(self, data: mjx.Data) -> jax.Array:
+    def _get_termination(self, data: mjx.Data, info:dict[str, Any]) -> jax.Array:
         fall_termination = self.get_gravity(data)[-1] < 0.0
-        return fall_termination | jp.isnan(data.qpos).any() | jp.isnan(data.qvel).any()
+        episode_end_termination = info["imitation_i"] >= self.PRM.nb_steps
+        return episode_end_termination | fall_termination | jp.isnan(data.qpos).any() | jp.isnan(data.qvel).any()
 
     def _get_obs(
         self, data: mjx.Data, info: dict[str, Any], contact: jax.Array
