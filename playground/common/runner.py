@@ -108,9 +108,9 @@ class BaseRunner(ABC):
             self.action_size,
             self.ppo_params,
             self.obs_size,  # may not work
-            [float(self.env.dx_range[0]), float(self.env.dx_range[1])],
-            [float(self.env.dy_range[0]), float(self.env.dy_range[1])],
-            [float(self.env.dtheta_range[0]), float(self.env.dtheta_range[1])],
+            [0, 0],
+            [0, 0],
+            [0, 0],
             self.env.kind,
             current_step,
             self.output_dir,
