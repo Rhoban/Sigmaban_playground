@@ -175,7 +175,7 @@ def reward_imitation(
         # + torso_orientation_rew
     )
 
-    reward *= cmd_norm > 0.01  # No reward for zero commands.
+    # reward *= cmd_norm > 0.01  # No reward for zero commands.
     return jp.nan_to_num(reward)
 
 
