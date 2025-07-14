@@ -30,8 +30,8 @@ class MjInfer(MJInferBase):
         self.linearVelocityScale = 1.0
         self.angularVelocityScale = 1.0
         self.dof_pos_scale = 1.0
-        self.dof_vel_scale = 2.0
-        self.action_scale = 1.0
+        self.dof_vel_scale = 1.0
+        self.action_scale = 2.0
 
         self.action_filter = LowPassActionFilter(50, cutoff_frequency=37.5)
 
