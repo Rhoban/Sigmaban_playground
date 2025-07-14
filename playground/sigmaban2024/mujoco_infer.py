@@ -44,6 +44,7 @@ class MjInfer(MJInferBase):
         self.COMMANDS_RANGE_X = [np.min(self.PRM.dxs), np.max(self.PRM.dxs)]
         self.COMMANDS_RANGE_Y = [np.min(self.PRM.dys), np.max(self.PRM.dys)]
         self.COMMANDS_RANGE_THETA = [np.min(self.PRM.dthetas), np.max(self.PRM.dthetas)]
+        self.n_footsteps = 3
 
         self.last_action = np.zeros(self.num_dofs)
         self.last_last_action = np.zeros(self.num_dofs)
@@ -90,6 +91,11 @@ class MjInfer(MJInferBase):
         humanoid_parameters.walk_max_dtheta = self.PRM.placo_parameters[
             "walk_max_dtheta"
         ]
+
+        humanoid_parameters.foot_width = 0.092
+        humanoid_parameters.walk_max_dx_backward = 0.1
+        humanoid_parameters.walk_max_dtheta = np.deg2rad(55)
+        humanoid_parameters.walk_dtheta_spacing = 0.05
 
         return humanoid_parameters
 
@@ -260,6 +266,7 @@ class MjInfer(MJInferBase):
         self.data.qvel[:] = 0.0
         self.data.ctrl[:] = self.default_actuator
         self.random_head_and_arm_position = (np.random.random(8) - 0.5) * 2
+        self.footsteps_preview = [0.0, 0.0, 0.0] * self.n_footsteps
 
         self.support = "left"
 
@@ -281,11 +288,16 @@ class MjInfer(MJInferBase):
             # if np.linalg.norm(self.commands) > 0.0:
             self.imitation_i += 1.0 * self.phase_frequency_factor
 
+            previous_support = self.support
             self.support = (
                 "left"
                 if self.imitation_i < self.PRM.nb_steps_in_period / 2
                 else "right"
             )
+            if previous_support != self.support:
+                self.footsteps_preview = np.roll(self.footsteps_preview, -3)
+                self.footsteps_preview[-3:] = self.commands
+                print(self.footsteps_preview)
 
             self.imitation_i = self.imitation_i % self.PRM.nb_steps_in_period
 
@@ -301,7 +313,7 @@ class MjInfer(MJInferBase):
             )
             obs = self.get_obs(
                 self.data,
-                self.commands,
+                self.footsteps_preview,
             )
 
             self.saved_obs.append(obs)
