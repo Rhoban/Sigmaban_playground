@@ -50,6 +50,7 @@ USE_IMITATION_REWARD = True
 USE_MOTOR_SPEED_LIMITS = False
 MASK_HEAD_AND_ARMS = True
 USE_FOOTSTEP_REWARD = False
+N_FOOTSTEPS = 3
 
 
 def default_config() -> config_dict.ConfigDict:
@@ -329,7 +330,8 @@ class Joystick(sigmaban_base.SigmabanEnv):
         # print(f'DEBUG4 ctrl: {ctrl}')
         data = mjx_env.init(self.mjx_model, qpos=qpos, qvel=qvel, ctrl=ctrl)
         rng, cmd_rng = jax.random.split(rng)
-        cmd = self.sample_command(cmd_rng)
+        cmd = jp.zeros(3 * N_FOOTSTEPS)
+        cmd = cmd.at[-3:].set(self.sample_command(cmd_rng))
 
         # Sample push interval.
         rng, push_rng = jax.random.split(rng)
@@ -575,12 +577,20 @@ class Joystick(sigmaban_base.SigmabanEnv):
         state.info["last_last_act"] = state.info["last_act"]
         state.info["last_act"] = action  # was
         # state.info["last_act"] = motor_targets  # became
-        state.info["rng"], cmd_rng = jax.random.split(state.info["rng"])
-        state.info["command"] = jp.where(
-            state.info["step"] > 500,
+        state.info["rng"], cmd_rng, new_cmd_rng = jax.random.split(state.info["rng"], 3)
+
+        new_command = jp.where(
+            jax.random.bernoulli(new_cmd_rng, p=0.25) * support_changed,
             self.sample_command(cmd_rng),
+            state.info["command"][-3:],
+        )
+        state.info["command"] = jp.where(
+            support_changed,
+            jp.roll(state.info["command"], -3).at[-3:].set(new_command),
             state.info["command"],
         )
+        # jax.debug.print("Command: {}", state.info["command"])
+        # jax.debug.print("New command: {}", new_command)
         state.info["step"] = jp.where(
             done | (state.info["step"] > 500),
             0,
