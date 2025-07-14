@@ -135,7 +135,7 @@
                     <inertial pos="0.000340637 -0.0522685 -0.0268822" quat="0.6755 0.737155 -0.00965607 0.0144769"
                         mass="0.243502" diaginertia="0.0007708 0.000757172 7.90289e-05"/>
                     <joint class="mx64" name="left_shoulder_roll" pos="0 0 0" axis="0 0 1"/>
-                    <joint name="left_shoulder_backlash" pos="0 0 0" axis="0 0 1" class="backlash"/>
+                    <joint name="left_shoulder_roll_backlash" pos="0 0 0" axis="0 0 1" class="backlash"/>
                     <geom size="0.0201 0.03055 0.0205" pos="0 -0.01755 -0.0235" type="box"/>
                     <geom size="0.0525 0.015 0.0015" pos="0 -0.1045 -0.04" quat="0 0.707107 -0.707107 0" type="box"/>
                     <body name="radius_v2" pos="0.0235 -0.142 -0.0025" quat="0.707107 0 0.707107 0">
