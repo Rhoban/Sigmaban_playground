@@ -70,6 +70,15 @@
                 condim="3"
             />
         </body>
+        <!-- <geom
+            name="box"
+            type="box"
+            size="0.3 0.3 0.05"
+            pos="0.43 0 0"
+            rgba="0.8 0.2 0.2 1"
+            contype="1"
+            conaffinity="0"
+        /> -->
         <geom
             name="box"
             type="box"

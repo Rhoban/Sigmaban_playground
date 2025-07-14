@@ -37,7 +37,9 @@ class MjInfer(MJInferBase):
         self.PRM = EpisodicReferenceMotion(
             "playground/sigmaban2024/data/parkour.json",
         )
-
+        # self.PRM = EpisodicReferenceMotion(
+        #     "/home/antoine/MISC/Open_Duck_reference_motion_generator/parkour.json"
+        # )
         self.policy = OnnxInfer(onnx_model_path, awd=True)
 
         # self.COMMANDS_RANGE_X = [np.min(self.PRM.dxs), np.max(self.PRM.dxs)]
@@ -287,6 +289,7 @@ class MjInfer(MJInferBase):
                 self.motor_targets[:8] = self.random_head_and_arm_position
                 self.motor_targets[:8] = np.zeros(8)
             self.data.ctrl = self.motor_targets.copy()
+            # self.data.ctrl = self.PRM.get_frame(int(self.imitation_i))[:20]
             # self.data.ctrl = np.zeros(20)
 
         if self.viewer is not None:
