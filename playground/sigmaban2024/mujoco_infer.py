@@ -258,7 +258,7 @@ class MjInfer(MJInferBase):
         self.t = 0
         self.data.qpos[:] = self.model.keyframe("home").qpos
         self.data.qvel[:] = 0.0
-        self.data.ctrl[:] = self.default_actuator
+        self.data.ctrl[:] = 0.0
         self.random_head_and_arm_position = (np.random.random(8) - 0.5) * 2
 
         self.support = "left"
@@ -330,7 +330,23 @@ class MjInfer(MJInferBase):
             # head_targets = self.commands[3:]
             if MASK_HEAD_AND_ARMS:
                 self.motor_targets[:8] = self.random_head_and_arm_position
-            self.data.ctrl = self.motor_targets.copy()
+
+            ctrl = np.zeros_like(self.data.ctrl)
+
+            ctrl[self.mx106_act_ids] = (
+                self.motor_targets[self.mx106_act_ids]
+                - self.data.qpos[self.mx106_joint_adrs]
+                - self.data.qpos[self.mx106_backlash_adrs]
+            ) * self.mx106_kp
+
+            ctrl[self.mx64_act_ids] = (
+                self.motor_targets[self.mx64_act_ids]
+                - self.data.qpos[self.mx64_joint_adrs]
+                - self.data.qpos[self.mx64_backlash_adrs]
+            ) * self.mx64_kp
+
+            self.data.ctrl = ctrl
+
             # self.data.ctrl = np.zeros(20)
 
         if self.viewer is not None:
@@ -372,7 +388,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_path",
         type=str,
-        default="playground/sigmaban2024/xmls/scene_flat_terrain.xml",
+        default="playground/sigmaban2024/xmls/scene_flat_terrain_motors_backlash.xml",
     )
     parser.add_argument("--save-obs", action="store_true", default=False)
 

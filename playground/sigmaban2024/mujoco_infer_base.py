@@ -22,7 +22,9 @@ class MJInferBase:
             self.model.jnt(k).name
             for k in range(0, self.model.njnt)
             if self.model.jnt(k).type == 0
-        ][0]  # assuming only one floating object!
+        ][
+            0
+        ]  # assuming only one floating object!
         self.actuator_names = [
             self.model.actuator(k).name for k in range(0, self.model.nu)
         ]  # will be useful to get only the actuators we care about
@@ -38,6 +40,41 @@ class MJInferBase:
         self.all_joint_qpos_addr = [
             self.get_joint_addr_from_name(n) for n in self.joint_names
         ]
+
+        self.mx106_names = [
+            "left_hip_yaw",
+            "left_hip_roll",
+            "left_hip_pitch",
+            "left_knee",
+            "left_ankle_pitch",
+            "left_ankle_roll",
+            "right_hip_yaw",
+            "right_hip_roll",
+            "right_hip_pitch",
+            "right_knee",
+            "right_ankle_pitch",
+            "right_ankle_roll",
+        ]
+        self.mx64_names = [
+            "left_shoulder_pitch",
+            "left_shoulder_roll",
+            "left_elbow",
+            "right_shoulder_pitch",
+            "right_shoulder_roll",
+            "right_elbow",
+            "head_yaw",
+            "head_pitch",
+        ]
+        self.mx106_kp = 21.0
+        self.mx64_kp = 12.5
+
+        self.mx106_joint_adrs = [self.get_joint_addr_from_name(name)[0] for name in self.mx106_names]
+        self.mx106_act_ids = [self.get_actuator_id_from_name(name) for name in self.mx106_names]
+        self.mx106_backlash_adrs = [self.get_joint_addr_from_name(name + "_backlash")[0] for name in self.mx106_names]
+        
+        self.mx64_joint_adrs = [self.get_joint_addr_from_name(name)[0] for name in self.mx64_names]
+        self.mx64_act_ids = [self.get_actuator_id_from_name(name) for name in self.mx64_names]
+        self.mx64_backlash_adrs = [self.get_joint_addr_from_name(name + "_backlash")[0] for name in self.mx64_names]
 
         self.actuator_joint_ids = [
             self.get_joint_id_from_name(n) for n in self.actuator_names
