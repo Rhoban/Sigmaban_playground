@@ -170,7 +170,7 @@ def reward_imitation(
         + ang_vel_z_rew
         + joint_pos_rew
         + joint_vel_rew
-        # + contact_rew
+        + contact_rew
         # + torso_orientation_rew
     )
 

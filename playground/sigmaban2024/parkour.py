@@ -637,7 +637,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 info["last_last_last_act"],  # 20
                 _motor_targets,
                 contact,  # 2
-                info["imitation_i"],
+                info["imitation_i"] / self.PRM.nb_steps,
             ]
         )
 
@@ -662,7 +662,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 feet_vel,  # 4*3
                 info["feet_air_time"],  # 2
                 info["current_reference_motion"],
-                info["imitation_i"],
+                info["imitation_i"] / self.PRM.nb_steps,
             ]
         )
 
