@@ -295,6 +295,27 @@ class Parkour(sigmaban_base.SigmabanEnv):
         # print(f'DEBUG3 base qvel: {qvel}')
         ctrl = self.get_actuator_joints_qpos(qpos)
         # print(f'DEBUG4 ctrl: {ctrl}')
+
+        # === Reference state initialization ===
+
+        # sample a imitation_i
+        imitation_i = jax.random.randint(key, (1,), minval=0, maxval=self.PRM.nb_steps)
+        current_reference_motion = self.PRM.get_frame(imitation_i[0])
+
+        joints_qpos = current_reference_motion[:20]
+
+        root_pos = current_reference_motion[-7:-4]
+        root_qpos = jp.concatenate([root_pos, jp.array([1.0, 0.0, 0.0, 0.0])])
+
+
+        qpos = self.set_actuator_joints_qpos(joints_qpos, qpos)
+        qpos = qpos.at[:7].set(root_qpos)
+
+        ctrl = self.get_actuator_joints_qpos(qpos)
+        # ======================================
+
+
+
         data = mjx_env.init(self.mjx_model, qpos=qpos, qvel=qvel, ctrl=ctrl)
         rng, cmd_rng = jax.random.split(rng)
 
@@ -308,10 +329,10 @@ class Parkour(sigmaban_base.SigmabanEnv):
         push_interval_steps = jp.round(push_interval / self.dt).astype(jp.int32)
 
 
-        if USE_IMITATION_REWARD:
-            current_reference_motion = self.PRM.get_frame(0)
-        else:
-            current_reference_motion = jp.zeros(0)
+        # if USE_IMITATION_REWARD:
+        #     current_reference_motion = self.PRM.get_frame(0)
+        # else:
+        #     current_reference_motion = jp.zeros(0)
 
         info = {
             "rng": rng,
@@ -332,7 +353,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 self._config.noise_config.action_max_delay * self._actuators
             ),
             "imu_history": jp.zeros(self._config.noise_config.imu_max_delay * 3),
-            "imitation_i": 0,
+            "imitation_i": imitation_i[0],
             "current_reference_motion": current_reference_motion,
         }
 

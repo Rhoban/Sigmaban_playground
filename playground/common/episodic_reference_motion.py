@@ -25,6 +25,8 @@ class EpisodicReferenceMotion:
     def get_frame(self, i):
         # outputs [joints_pos, joints_vel, foot_contacts, world_linear_vel, world_angular_vel],
 
+        root_pos = self.frames[i][:3]
+        root_quat = self.frames[i][3:7]
         joints_pos = self.frames[i][7 : 7 + 20]  # joints pos
         joints_vel = self.frames[i][39 : 39 + 20]  # joints vel
         foot_contacts = self.frames[i][-2:]  # foot contacts
@@ -37,6 +39,8 @@ class EpisodicReferenceMotion:
                 joints_vel,
                 foot_contacts,
                 world_lin_vel_ang_vel,
+                root_pos,
+                root_quat
             ]
         )
         return frame

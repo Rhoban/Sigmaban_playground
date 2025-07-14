@@ -1,4 +1,5 @@
 import jax
+import time
 import numpy as np
 import os
 import mujoco
@@ -47,8 +48,11 @@ print("Resetting...")
 state = env.reset(key)
 
 step_fn = jax.jit(env.step)
+reset_fn = jax.jit(env.reset)
 
 print("Stepping...")
+
+s = time.time()
 while True:
     obs = np.array(state.obs['state'])
     # action = policy.infer(obs)
@@ -60,4 +64,10 @@ while True:
     data.qpos[:] = state.data.qpos
     mujoco.mj_forward(model, data)
     viewer.sync()
+
+    if time.time() - s > 3:
+        # key = jax.random.key(np.random.randint(0, 1000000))
+        jax.debug.print("reset")
+        state = reset_fn(key)
+        s = time.time()
     # input()
