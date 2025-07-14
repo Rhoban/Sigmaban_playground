@@ -180,7 +180,7 @@ with mujoco.viewer.launch_passive(
 
                 ref_motion= PRM.get_frame(imitation_i)
                 ref_motion = np.array(ref_motion)
-                if ref_motion.shape[0] == 48:
+                if ref_motion.shape[0] == 55:
                     joints_pos = ref_motion[0:20]
                     ref_joint_pos = joints_pos
                     # ref_joint_pos = np.concatenate([joints_pos[:9], joints_pos[11:]])

@@ -191,8 +191,8 @@ class MjInfer(MJInferBase):
                     else self.motor_targets[8:]
                 ),
                 contacts,
-                [self.imitation_i/self.PRM.nb_steps]
-                self.PRM.get_frame(self.imitation_i)
+                [self.imitation_i/self.PRM.nb_steps],
+                self.PRM.get_frame(int(self.imitation_i))
             ]
         )
 
@@ -228,6 +228,7 @@ class MjInfer(MJInferBase):
 
     def reset(self):
         self.counter = 0
+        self.imitation_i = 0
         self.t = 0
         self.data.qpos[:] = self.model.keyframe("home").qpos
         self.data.qvel[:] = 0.0

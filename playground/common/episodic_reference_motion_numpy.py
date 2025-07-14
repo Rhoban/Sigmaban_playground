@@ -30,6 +30,8 @@ class EpisodicReferenceMotion:
         frame += self.ref_motion["Frames"][i][
             33 : 33 + 6
         ]  # base linear vel + base angular vel
+        frame += self.ref_motion["Frames"][i][:3]
+        frame += self.ref_motion["Frames"][i][3:7]
         return frame
 
 
