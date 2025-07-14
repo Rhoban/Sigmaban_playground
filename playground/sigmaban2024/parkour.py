@@ -662,7 +662,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 feet_vel,  # 4*3
                 info["feet_air_time"],  # 2
                 info["current_reference_motion"],
-                info["imitation_i"] / self.PRM.nb_steps,
+                info["imitation_i"] / self.PRM.nb_step,
             ]
         )
 
