@@ -19,7 +19,7 @@ jax.config.update(
 os.environ["JAX_COMPILATION_CACHE_DIR"] = ".tmp/jax_cache"
 
 key = jax.random.key(1)
-task = "flat_terrain_backlash"
+task = "flat_terrain_motors_backlash"
 scene = task_to_xml(task)
 
 model = mujoco.MjModel.from_xml_path(str(scene))
@@ -32,7 +32,7 @@ viewer = mujoco.viewer.launch_passive(
     show_right_ui=False,
 )
 
-# policy = OnnxInfer("ONNX.onnx", awd=True)
+policy = OnnxInfer("ONNX.onnx", awd=True)
 # Viewer only
 # while True:
 #     data.qpos[:]= model.keyframe("home").qpos
@@ -50,8 +50,8 @@ step_fn = jax.jit(env.step)
 print("Stepping...")
 while True:
     obs = np.array(state.obs['state'])
-    # action = policy.infer(obs)
-    action = np.zeros(20)
+    action = policy.infer(obs)
+    # action = np.zeros(20)
 
     state = step_fn(state, jp.array(action))
 

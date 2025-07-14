@@ -528,7 +528,33 @@ class Joystick(sigmaban_base.SigmabanEnv):
         if MASK_HEAD_AND_ARMS:
             motor_targets = motor_targets.at[:8].set(jp.zeros(8))
 
-        data = mjx_env.step(self.mjx_model, state.data, motor_targets, self.n_substeps)
+        def single_step(data, _):
+            ctrl = jp.zeros(self._mj_model.nu)
+
+            ctrl = ctrl.at[self.mx106_act_ids].set(
+                (
+                    motor_targets[self.mx106_act_ids]
+                    - data.qpos[self.mx106_joint_adrs]
+                    - data.qpos[self.mx106_backlash_adrs]
+                )
+                * self.mx106_kp
+            )
+
+            ctrl = ctrl.at[self.mx64_act_ids].set(
+                (
+                    motor_targets[self.mx64_act_ids]
+                    - data.qpos[self.mx64_joint_adrs]
+                    - data.qpos[self.mx64_backlash_adrs]
+                )
+                * self.mx64_kp
+            )
+
+            data = data.replace(ctrl=ctrl)
+            data = mjx.step(self.mjx_model, data)
+            return data, None
+
+        data = jax.lax.scan(single_step, data, (), self.n_substeps)[0]
+        # data = mjx_env.step(self.mjx_model, state.data, motor_targets, self.n_substeps)
 
         state.info["motor_targets"] = motor_targets
 
@@ -652,14 +678,15 @@ class Joystick(sigmaban_base.SigmabanEnv):
 
         # Handling backlash
         joint_angles = self.get_actuator_joints_qpos(data.qpos)
-        joint_backlash = self.get_actuator_backlash_qpos(data.qpos)
+        joint_backlash = self.get_actuator_backlash_qpos(data.qpos).flatten()
 
         if MASK_HEAD_AND_ARMS:
             joint_angles = joint_angles[8:]
             joint_backlash = joint_backlash[8:]
 
-        for i in self.backlash_idx_to_add:
-            joint_backlash = jp.insert(joint_backlash, i, 0)
+        # Inserting backlash for joints with no backlash
+        # for i in self.backlash_idx_to_add:
+        #     joint_backlash = jp.insert(joint_backlash, i, 0)
 
         joint_angles = joint_angles + joint_backlash
 

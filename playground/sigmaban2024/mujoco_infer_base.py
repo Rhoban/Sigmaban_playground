@@ -68,13 +68,27 @@ class MJInferBase:
         self.mx106_kp = 21.0
         self.mx64_kp = 12.5
 
-        self.mx106_joint_adrs = [self.get_joint_addr_from_name(name)[0] for name in self.mx106_names]
-        self.mx106_act_ids = [self.get_actuator_id_from_name(name) for name in self.mx106_names]
-        self.mx106_backlash_adrs = [self.get_joint_addr_from_name(name + "_backlash")[0] for name in self.mx106_names]
-        
-        self.mx64_joint_adrs = [self.get_joint_addr_from_name(name)[0] for name in self.mx64_names]
-        self.mx64_act_ids = [self.get_actuator_id_from_name(name) for name in self.mx64_names]
-        self.mx64_backlash_adrs = [self.get_joint_addr_from_name(name + "_backlash")[0] for name in self.mx64_names]
+        self.mx106_joint_adrs = [
+            self.get_joint_addr_from_name(name)[0] for name in self.mx106_names
+        ]
+        self.mx106_act_ids = [
+            self.get_actuator_id_from_name(name) for name in self.mx106_names
+        ]
+        self.mx106_backlash_adrs = [
+            self.get_joint_addr_from_name(name + "_backlash")[0]
+            for name in self.mx106_names
+        ]
+
+        self.mx64_joint_adrs = [
+            self.get_joint_addr_from_name(name)[0] for name in self.mx64_names
+        ]
+        self.mx64_act_ids = [
+            self.get_actuator_id_from_name(name) for name in self.mx64_names
+        ]
+        self.mx64_backlash_adrs = [
+            self.get_joint_addr_from_name(name + "_backlash")[0]
+            for name in self.mx64_names
+        ]
 
         self.actuator_joint_ids = [
             self.get_joint_id_from_name(n) for n in self.actuator_names
