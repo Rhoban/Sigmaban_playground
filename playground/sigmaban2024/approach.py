@@ -63,7 +63,7 @@ class Trajectory:
                 target_support_foot,
             )
 
-            dx, dy, dtheta = humanoid_parameters.ellipsoid_overlap_clip(
+            dx, dy, dtheta = humanoid_parameters.conic_overlap_clip(
                 (
                     placo.HumanoidRobot_Side.left
                     if support_foot == "left"
@@ -206,9 +206,12 @@ class ApproachSimulator:
         self.mjinfer.viewer.user_scn.ngeom = 4
 
     def walk_approach(self):
-        self.mjinfer.enable_viewer(False)
+        total_footsteps = 0
+        runs = 0
 
         while True:
+            runs += 1
+
             self.mjinfer.reset()
 
             x = np.random.uniform(-0.75, 0.75)
@@ -226,17 +229,19 @@ class ApproachSimulator:
             params.walk_max_dtheta = np.deg2rad(55)
 
             while not arrived:
-                self.mjinfer.viewer.user_scn.ngeom = (
-                    0  # Clear previous custom geometries
-                )
-                self.draw_footstep(T_world_target)
+                total_footsteps += 1
+                if self.mjinfer.viewer:
+                    self.mjinfer.viewer.user_scn.ngeom = (
+                        0  # Clear previous custom geometries
+                    )
+                    self.draw_footstep(T_world_target)
                 T_world_left = self.mjinfer.get_T_world_site("left_foot")
                 T_world_right = self.mjinfer.get_T_world_site("right_foot")
 
                 T_right_target = np.linalg.inv(T_world_right) @ T_world_target
                 error_pos = np.linalg.norm(T_right_target[:2, 3])
                 error_yaw = abs(np.arctan2(T_right_target[1, 0], T_right_target[0, 0]))
-                arrived = error_pos < 5e-2 and error_yaw < np.deg2rad(5)
+                arrived = error_pos < 5e-2 and error_yaw < np.deg2rad(10)
                 if arrived:
                     break
 
@@ -248,7 +253,8 @@ class ApproachSimulator:
                     T_world_target,
                     "right",
                 )
-                self.traj.draw_trajectory(self.mjinfer.viewer.user_scn, trajectory)
+                if self.mjinfer.viewer:
+                    self.traj.draw_trajectory(self.mjinfer.viewer.user_scn, trajectory)
                 step = trajectory[0]
                 dx, dy, dtheta = step["dx"], step["dy"], step["dtheta"]
                 if USE_FOOTSTEP_REWARD:
@@ -256,8 +262,20 @@ class ApproachSimulator:
                 else:
                     vx, vy, vtheta = self.mapper.remap(dx, dy, dtheta)
 
-                self.mjinfer.set_command(vx, vy, vtheta)
+                for k in range(3):
+                    trajectory.append(trajectory[-1])
+
+                self.mjinfer.mode_command = False
+                self.mjinfer.footsteps_preview = np.array(
+                    [
+                        [step["dx"], step["dy"], step["dtheta"]]
+                        for step in trajectory[:3]
+                    ]
+                ).flatten()
+                # self.mjinfer.set_command(vx, vy, vtheta)
                 self.mjinfer.walk_one_step()
+
+            print(f"Run {runs}, Average footsteps: {total_footsteps / runs:.2f}")
 
 
 if __name__ == "__main__":
@@ -279,9 +297,16 @@ if __name__ == "__main__":
         type=str,
         default="footsteps_mapping.json",
     )
+    parser.add_argument(
+        "--headless"
+        , action="store_true",
+        help="Run without GUI (headless mode)."
+    )
     args = parser.parse_args()
 
     mjinfer = MjInfer(args.model_path, args.reference_data, args.walk_onnx)
+    if not args.headless:
+        mjinfer.enable_viewer(False)
     footsteps_net = FootstepsNet(args.footstepsnet_onnx)
     mapper = FootstepsMapper()
     mapper.load(args.footsteps_mapping)
