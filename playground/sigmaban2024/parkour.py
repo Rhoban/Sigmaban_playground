@@ -659,6 +659,7 @@ class Parkour(sigmaban_base.SigmabanEnv):
                 _motor_targets,
                 contact,  # 2
                 info["imitation_i"] / self.PRM.nb_steps,
+                info["current_reference_motion"],
             ]
         )
 

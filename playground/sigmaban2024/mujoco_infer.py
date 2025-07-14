@@ -192,6 +192,7 @@ class MjInfer(MJInferBase):
                 ),
                 contacts,
                 [self.imitation_i/self.PRM.nb_steps]
+                self.PRM.get_frame(self.imitation_i)
             ]
         )
 

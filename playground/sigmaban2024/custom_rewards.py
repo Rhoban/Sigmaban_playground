@@ -175,6 +175,7 @@ def reward_imitation(
     )
 
     # reward *= cmd_norm > 0.01  # No reward for zero commands.
+    # reward = reward / 100
     return jp.nan_to_num(reward)
 
 
