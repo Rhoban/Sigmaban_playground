@@ -191,7 +191,7 @@ class MjInfer(MJInferBase):
                     else self.motor_targets[8:]
                 ),
                 contacts,
-                [self.imitation_i]
+                [self.imitation_i/self.PRM.nb_steps]
             ]
         )
 
