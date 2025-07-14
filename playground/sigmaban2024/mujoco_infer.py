@@ -13,7 +13,7 @@ from playground.sigmaban2024.mujoco_infer_base import MJInferBase
 
 USE_MOTOR_SPEED_LIMITS = False
 MASK_HEAD_AND_ARMS = True
-USE_FOOTSTEP_REWARD = False
+USE_FOOTSTEP_REWARD = True
 
 
 class MjInfer(MJInferBase):
@@ -25,6 +25,8 @@ class MjInfer(MJInferBase):
         save_obs: bool = False,
     ):
         super().__init__(model_path)
+
+        self.mode_command = True
 
         # Params
         self.linearVelocityScale = 1.0
@@ -294,7 +296,7 @@ class MjInfer(MJInferBase):
                 if self.imitation_i < self.PRM.nb_steps_in_period / 2
                 else "right"
             )
-            if previous_support != self.support:
+            if previous_support != self.support and self.mode_command:
                 self.footsteps_preview = np.roll(self.footsteps_preview, -3)
                 self.footsteps_preview[-3:] = self.commands
                 print(self.footsteps_preview)
