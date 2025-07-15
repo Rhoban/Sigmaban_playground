@@ -11,7 +11,7 @@ import pickle
 
 # Import the reference motion class.
 from playground.sigmaban2024 import base
-from playground.common.episodic_reference_motion_numpy import EpisodicReferenceMotion
+from playground.common.episodic_reference_motion_splines_numpy import EpisodicReferenceMotion
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 SCENE_PATH = f"{SCRIPT_PATH}/xmls"
@@ -180,16 +180,16 @@ with mujoco.viewer.launch_passive(
 
                 ref_motion= PRM.get_frame(imitation_i)
                 ref_motion = np.array(ref_motion)
-                if ref_motion.shape[0] == 55:
-                    joints_pos = ref_motion[0:20]
-                    ref_joint_pos = joints_pos
+                # if ref_motion.shape[0] == 55:
+                joints_pos = ref_motion[0:20]
+                ref_joint_pos = joints_pos
                     # ref_joint_pos = np.concatenate([joints_pos[:9], joints_pos[11:]])
-                else:
-                    print(
-                        "Error: Unexpected reference motion dimension:",
-                        ref_motion.shape,
-                    )
-                    sys.exit(1)
+                # else:
+                #     print(
+                #         "Error: Unexpected reference motion dimension:",
+                #         ref_motion.shape,
+                #     )
+                #     sys.exit(1)
                 # print(ref_joint_pos)
                 # print(len(ref_joint_pos))
                 # print(ref_joint_pos.shape)

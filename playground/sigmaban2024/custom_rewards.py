@@ -2,6 +2,22 @@ import jax
 import jax.numpy as jp
 
 
+def reward_spline_imitation(
+    joints_qpos: jax.Array,
+    reference_joints_qpos: jax.Array,
+    use_imitation_reward: bool = False,
+) -> jax.Array:
+    if not use_imitation_reward:
+        return jp.nan_to_num(0.0)
+
+    w_joint_pos = 15.0
+    joint_pos_rew = (
+        -jp.sum(jp.square(joints_qpos - reference_joints_qpos)) * w_joint_pos
+    )
+
+    return jp.nan_to_num(joint_pos_rew)
+
+
 def reward_imitation(
     base_qpos: jax.Array,
     base_qvel: jax.Array,

@@ -4,16 +4,16 @@ import argparse
 
 from playground.common import randomize
 from playground.common.runner import BaseRunner
-from playground.sigmaban2024 import joystick, parkour
+from playground.sigmaban2024 import joystick, parkour, shoot
 
 
 class SigmabanRunner(BaseRunner):
-
     def __init__(self, args):
         super().__init__(args)
         available_envs = {
             "joystick": (joystick, joystick.Joystick),
             "parkour": (parkour, parkour.Parkour),
+            "shoot": (shoot, shoot.Shoot),
         }
         if args.env not in available_envs:
             raise ValueError(f"Unknown env {args.env}")
@@ -43,16 +43,14 @@ def main() -> None:
     parser.add_argument("--num_timesteps", type=int, default=150000000)
     parser.add_argument("--num_envs", type=int, default=8192)
     parser.add_argument("--env", type=str, default="joystick", help="env")
-    parser.add_argument("--task", type=str, default="flat_terrain", help="Task to run")
+    parser.add_argument("--task", type=str, default="flat_terrain_backlash_shoot", help="Task to run")
     parser.add_argument(
         "--restore_checkpoint_path",
         type=str,
         default=None,
         help="Path to restore checkpoint from",
     )
-    parser.add_argument(
-        "--wandb", action="store_true", help="Publish run to wandb"
-    )
+    parser.add_argument("--wandb", action="store_true", help="Publish run to wandb")
     # parser.add_argument(
     #     "--debug", action="store_true", help="Run in debug mode with minimal parameters"
     # )

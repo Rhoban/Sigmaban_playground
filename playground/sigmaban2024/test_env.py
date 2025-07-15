@@ -6,7 +6,8 @@ import mujoco
 import mujoco.viewer
 import jax.numpy as jp
 # from playground.sigmaban2024.joystick import Joystick
-from playground.sigmaban2024.parkour import Parkour
+# from playground.sigmaban2024.parkour import Parkour
+from playground.sigmaban2024.shoot import Shoot
 from playground.sigmaban2024.constants import task_to_xml
 from playground.common.onnx_infer import OnnxInfer
 
@@ -21,7 +22,7 @@ jax.config.update(
 os.environ["JAX_COMPILATION_CACHE_DIR"] = ".tmp/jax_cache"
 
 key = jax.random.key(1)
-task = "flat_terrain_backlash_parkour"
+task = "flat_terrain_backlash_shoot"
 scene = task_to_xml(task)
 
 model = mujoco.MjModel.from_xml_path(str(scene))
@@ -43,7 +44,7 @@ viewer = mujoco.viewer.launch_passive(
 
 # exit()
 
-env = Parkour(task=task)
+env = Shoot(task=task)
 print("Resetting...")
 state = env.reset(key)
 
