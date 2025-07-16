@@ -34,6 +34,8 @@ walk_pose = {
     "right_knee": 1.11276,
     "right_ankle_pitch": -0.567338,
     "right_ankle_roll": 0.129063,
+    "left_foot_contact": 0.0,
+    "right_foot_contact": 0.0,
 }
 
 t = 0
@@ -66,10 +68,13 @@ for t, spline in enumerate(tmp_splines):
     splines.append(walk_pose.copy())
     for i, name in enumerate(actuators_used):
         nname = name.replace("shoot", shoot).replace("support", support)
-        splines[-1][nname] += spline[name]
+        if "contact" not in name:
+            add = spline[name]
+        else:
+            add = spline[name] > 1e-5
+        splines[-1][nname] += add
 
 
-print(splines[0])
 data = {
     "duration": float(spline_length),
     "FPS": float(FPS),
@@ -77,5 +82,3 @@ data = {
     "Frames": splines,
 }
 json.dump(data, open("sampled_splines.json", "w"), indent=2)
-
-

@@ -4,18 +4,31 @@ import jax.numpy as jp
 
 def reward_spline_imitation(
     joints_qpos: jax.Array,
-    reference_joints_qpos: jax.Array,
+    reference: jax.Array,
+    contacts: jax.Array,
     use_imitation_reward: bool = False,
 ) -> jax.Array:
     if not use_imitation_reward:
         return jp.nan_to_num(0.0)
 
     w_joint_pos = 15.0
-    joint_pos_rew = (
-        -jp.sum(jp.square(joints_qpos - reference_joints_qpos)) * w_joint_pos
-    )
+    w_contact = 1.0
 
-    return jp.nan_to_num(joint_pos_rew)
+    ref_joints_qpos = reference[:20]
+    ref_foot_contacts = reference[20:]
+
+    joint_pos_rew = -jp.sum(jp.square(joints_qpos - ref_joints_qpos)) * w_joint_pos
+
+    ref_foot_contacts = jp.where(
+        ref_foot_contacts > 0.5,
+        jp.ones_like(ref_foot_contacts),
+        jp.zeros_like(ref_foot_contacts),
+    )
+    contact_rew = jp.sum(contacts == ref_foot_contacts) * w_contact
+
+    rew = joint_pos_rew + contact_rew
+
+    return jp.nan_to_num(rew)
 
 
 def reward_imitation(

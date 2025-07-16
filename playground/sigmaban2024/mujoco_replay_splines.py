@@ -27,7 +27,12 @@ class MjInfer(MJInferBase):
         self.counter = 0
         self.support = support
         self.shoot = "right" if self.support == "left" else "left"
-        self.actuators_used = list(self.read_splines.splines.keys())
+        self.actuators_used = [
+            name
+            for name in list(self.read_splines.splines.keys())
+            if "contact" not in name
+        ]
+
         self.actuators_used_ids = []
         for name in self.actuators_used:
             nname = name.replace("shoot", self.shoot).replace("support", self.support)
@@ -63,6 +68,9 @@ class MjInfer(MJInferBase):
         if self.counter % self.decimation == 0:
             all_q = self.read_splines.get_all_splines_at(self.actuators_used, self.t)
             all_q = list(all_q.values())
+            left_foot_contact = self.read_splines.get_spline_at("left_foot_contact", self.t) > 1e-5
+            right_foot_contact = self.read_splines.get_spline_at("right_foot_contact", self.t) > 1e-5
+            print(left_foot_contact, right_foot_contact)
             self.data.ctrl = self.model.keyframe("home").ctrl
             self.data.ctrl[self.actuators_used_ids] += all_q
 
