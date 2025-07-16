@@ -36,6 +36,7 @@ from playground.common.rewards import (
     cost_torques,
     cost_action_rate,
     reward_alive,
+    cost_orientation
 )
 from playground.sigmaban2024.custom_rewards import reward_spline_imitation
 
@@ -79,10 +80,9 @@ def default_config() -> config_dict.ConfigDict:
             scales=config_dict.create(
                 torques=-1.0e-2,
                 action_rate=-0.75,  # was -0.3
-                stand_still=0.0,  # was -0.3
                 alive=20.0,
                 imitation=1.0,
-                # feet_dist=-2.0,
+                orientation=-1.0
             ),
             tracking_sigma=0.01,  # was working at 0.01
         ),
@@ -717,6 +717,7 @@ class Shoot(sigmaban_base.SigmabanEnv):
                 info["current_reference_motion"],
                 USE_IMITATION_REWARD,
             ),
+            "orientation": cost_orientation(self.get_gravity(data)),
         }
 
         return ret

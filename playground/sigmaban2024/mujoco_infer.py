@@ -6,13 +6,13 @@ import mujoco.viewer
 import time
 import argparse
 from playground.common.onnx_infer import OnnxInfer
-from playground.common.episodic_reference_motion_numpy import EpisodicReferenceMotion
+from playground.common.episodic_reference_motion_splines_numpy import EpisodicReferenceMotion
 from playground.common.utils import LowPassActionFilter
 
 from playground.sigmaban2024.mujoco_infer_base import MJInferBase
 
 USE_MOTOR_SPEED_LIMITS = False
-MASK_HEAD_AND_ARMS = True
+MASK_HEAD_AND_ARMS = False
 
 
 class MjInfer(MJInferBase):
@@ -35,7 +35,7 @@ class MjInfer(MJInferBase):
         self.action_filter = LowPassActionFilter(50, cutoff_frequency=37.5)
 
         self.PRM = EpisodicReferenceMotion(
-            "playground/sigmaban2024/data/parkour.json",
+            "playground/sigmaban2024/data/sampled_splines.json",
         )
         # self.PRM = EpisodicReferenceMotion(
         #     "/home/antoine/MISC/Open_Duck_reference_motion_generator/parkour.json"
@@ -331,7 +331,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_path",
         type=str,
-        default="playground/sigmaban2024/xmls/scene_flat_terrain.xml",
+        default="playground/sigmaban2024/xmls/scene_flat_terrain_backlash_shoot.xml",
     )
     parser.add_argument("--save-obs", action="store_true", default=False)
 
