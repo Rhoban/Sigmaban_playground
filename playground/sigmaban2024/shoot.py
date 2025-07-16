@@ -715,6 +715,7 @@ class Shoot(sigmaban_base.SigmabanEnv):
             "imitation": reward_spline_imitation(
                 self.get_actuator_joints_qpos(data.qpos),  # actuator joints qpos
                 info["current_reference_motion"],
+                contact,
                 USE_IMITATION_REWARD,
             ),
             "orientation": cost_orientation(self.get_gravity(data)),
