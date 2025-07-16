@@ -83,7 +83,7 @@ def default_config() -> config_dict.ConfigDict:
                 alive=20.0,
                 imitation=1.0,
                 orientation=-1.0,
-                feet_parallel=-1.0
+                feet_parallel=-5.0
             ),
             tracking_sigma=0.01,  # was working at 0.01
         ),
