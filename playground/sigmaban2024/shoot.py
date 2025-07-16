@@ -38,7 +38,7 @@ from playground.common.rewards import (
     reward_alive,
     cost_orientation
 )
-from playground.sigmaban2024.custom_rewards import reward_spline_imitation
+from playground.sigmaban2024.custom_rewards import reward_spline_imitation, cost_feet_parallel
 
 # if set to false, won't require the reference data to be present and won't compute the reference motions polynoms for nothing
 USE_MOTOR_SPEED_LIMITS = False
@@ -82,7 +82,8 @@ def default_config() -> config_dict.ConfigDict:
                 action_rate=-0.75,  # was -0.3
                 alive=20.0,
                 imitation=1.0,
-                orientation=-1.0
+                orientation=-1.0,
+                feet_parallel=-1.0
             ),
             tracking_sigma=0.01,  # was working at 0.01
         ),
@@ -500,6 +501,9 @@ class Shoot(sigmaban_base.SigmabanEnv):
         obs = self._get_obs(data, state.info, contact)
         done = self._get_termination(data, state.info)
 
+        left_foot_mat = data.site_xmat[self.get_site_id_from_name("left_foot")].reshape(3, 3)
+        right_foot_mat = data.site_xmat[self.get_site_id_from_name("right_foot")].reshape(3, 3)
+
         rewards = self._get_reward(
             data,
             action,
@@ -508,6 +512,8 @@ class Shoot(sigmaban_base.SigmabanEnv):
             done,
             first_contact,
             contact,
+            left_foot_mat,
+            right_foot_mat,
         )
         # FIXME
         rewards = {
@@ -699,6 +705,8 @@ class Shoot(sigmaban_base.SigmabanEnv):
         done: jax.Array,
         first_contact: jax.Array,
         contact: jax.Array,
+        left_foot_mat: jax.Array,
+        right_foot_mat: jax.Array
     ) -> dict[str, jax.Array]:
         del metrics  # Unused.
 
@@ -719,6 +727,7 @@ class Shoot(sigmaban_base.SigmabanEnv):
                 USE_IMITATION_REWARD,
             ),
             "orientation": cost_orientation(self.get_gravity(data)),
+            "feet_parallel": cost_feet_parallel(left_foot_mat, right_foot_mat)
         }
 
         return ret

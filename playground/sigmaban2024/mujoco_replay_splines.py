@@ -21,7 +21,7 @@ class MjInfer(MJInferBase):
     ):
         super().__init__(model_path)
         self.read_splines = ReadSplines(
-            "/home/antoine/Rhoban/Sigmaban_playground/kick.json"
+            "/home/antoine/Rhoban/Sigmaban_playground/playground/sigmaban2024/data/kick.json"
         )
         self.viewer = None
         self.counter = 0
@@ -70,7 +70,9 @@ class MjInfer(MJInferBase):
             all_q = list(all_q.values())
             left_foot_contact = self.read_splines.get_spline_at("left_foot_contact", self.t) > 1e-5
             right_foot_contact = self.read_splines.get_spline_at("right_foot_contact", self.t) > 1e-5
-            print(left_foot_contact, right_foot_contact)
+            # print(left_foot_contact, right_foot_contact)
+            com_y_traj = self.read_splines.get_spline_at("com_y_traj", self.t)
+            print("com y traj", com_y_traj)
             self.data.ctrl = self.model.keyframe("home").ctrl
             self.data.ctrl[self.actuators_used_ids] += all_q
 

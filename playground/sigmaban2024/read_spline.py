@@ -18,9 +18,12 @@ class ReadSplines:
         for k, v in self.spline_data.items():
             if k == "trunkZ" or k == "useSteady" or k == "remap" or k == "kick":
                 continue
-
+            angle = k != "com_y_traj"
             x = np.array([point[0] for point in v])
-            y = np.array([np.deg2rad(point[1]) for point in v])
+            if angle:
+                y = np.array([np.deg2rad(point[1]) for point in v])
+            else:
+                y = np.array([point[1] for point in v])
             self.splines[k] = CubicSpline(x, y, bc_type="natural")
             self.max_ts[k] = x[-1]
 
@@ -65,17 +68,19 @@ if __name__ == "__main__":
 
     rs = ReadSplines(sys.argv[1])
 
+    spline_to_plot = "com_y_traj"
+    # spline_to_plot = "shoot_hip_pitch"
+
     x = []
     y = []
     remap = []
     for i in range(7 * 100):
         t = i / 100
         x.append(t)
-        y.append(rs.get_spline_at("shoot_hip_pitch", t))
-        print(rs.get_remap_factor(t))
+        y.append(rs.get_spline_at(spline_to_plot, t))
 
     plt.plot(x, y)
-    plt.title("Shoot Hip Pitch Spline")
+    plt.title(f"{spline_to_plot} Spline")
     plt.xlabel("Time (s)")
     plt.ylabel("Angle (degrees)")
     plt.grid()

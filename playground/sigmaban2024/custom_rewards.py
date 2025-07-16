@@ -2,6 +2,18 @@ import jax
 import jax.numpy as jp
 
 
+def cost_feet_parallel(
+    left_foot_mat: jax.Array,
+    right_foot_mat: jax.Array
+) -> jax.Array:
+    z = jp.array([0, 0, 1])
+    left_dist = jp.linalg.norm(z - left_foot_mat[:3, :3][2])
+    right_dist = jp.linalg.norm(z - right_foot_mat[:3, :3][2])
+
+    return jp.nan_to_num(left_dist + right_dist)
+
+
+
 def reward_spline_imitation(
     joints_qpos: jax.Array,
     reference: jax.Array,
